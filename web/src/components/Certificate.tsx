@@ -43,6 +43,11 @@ export function Certificate({ doc, envelopeId, documentSha256, signatures, audit
                   </div>
                   <p className="text-xs text-bone-400">Signed {new Date(s.signedAt).toUTCString()} · {s.slot === 0 ? "sender's own code" : `code issued to ${s.recipientName || "open slot"}`}</p>
                   {s.receiptBody && <p className="mono text-[11px] text-bone-500">ip {s.receiptBody.ip} · relay received {new Date(s.receiptBody.receivedAt).toISOString()} · {s.receiptValid === true ? "attested" : s.receiptValid === false ? "ATTESTATION INVALID" : "unverified"}</p>}
+                  {s.fields && Object.keys(s.fields).length > 0 && (
+                    <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+                      {Object.entries(s.fields).map(([k, v]) => <span key={k} className="contents"><dt className="text-bone-500">{k.split(":")[2] || k.split(":")[0]}</dt><dd>{k.startsWith("check:") ? (v === "yes" ? "☑ yes" : "☐ no") : v}</dd></span>)}
+                    </dl>
+                  )}
                   <p className="mono text-[11px] text-bone-500">key {s.ecdsa.fingerprint} · relay {s.relayId} · received {new Date(s.relayCreatedAt).toISOString()}</p>
                 </div>
                 <img src={s.signatureImage} alt={`${s.signerName} signature`} className="h-16 w-40 rounded-lg bg-white object-contain" />

@@ -1,6 +1,6 @@
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import { FIELD_RE, initialsOf, normalizeFieldTokens, sameName, type FieldKind } from "./fields";
+import { FIELD_LABEL, FIELD_RE, fieldKey, initialsOf, normalizeFieldTokens, sameName, type FieldKind } from "./fields";
 import type { VerifiedSignature } from "./types";
 
 marked.setOptions({ gfm: true, breaks: false });
@@ -23,11 +23,20 @@ export interface RenderContext {
   viewerName?: string | null;
 }
 
-function fieldHtml(kind: FieldKind, name: string, ctx: RenderContext): string {
+function fieldHtml(kind: FieldKind, name: string, label: string, ctx: RenderContext): string {
   const sig = ctx.signatures?.find((s) => sameName(s.signerName, name) || (name === "" && s.slot > 0));
   const mine = ctx.viewerName !== undefined && ctx.viewerName !== null && (ctx.viewerName === "" || sameName(ctx.viewerName, name));
-  const label = { sign: "Signature", date: "Date", initials: "Initials" }[kind];
   const who = name ? esc(name) : "Signer";
+  const caption = label ? esc(label) : FIELD_LABEL[kind];
+  if (kind === "text" || kind === "check") {
+    const value = sig?.fields?.[fieldKey({ kind, name, label })];
+    if (kind === "check") {
+      const on = value === "yes";
+      return `<span class="sig-field inline check${sig ? " signed" : ""}${mine && !sig ? " mine" : ""}" data-kind="check"><span class="sig-check">${on ? "☑" : "☐"}</span><span class="sig-value">${caption}</span><span class="sig-meta">${who}</span></span>`;
+    }
+    if (sig && value) return `<span class="sig-field inline signed" data-kind="text"><span class="sig-value">${esc(value)}</span><span class="sig-meta">${caption} · ${who}</span></span>`;
+    return `<span class="sig-field inline${mine ? " mine" : ""}" data-kind="text"><span class="sig-label">${mine ? "Fill in" : caption}</span><span class="sig-name">${mine ? caption : who}</span></span>`;
+  }
   if (sig) {
     if (kind === "sign") {
       return `<span class="sig-field signed" data-kind="sign"><img src="${sig.signatureImage}" alt="Signature of ${esc(sig.signerName)}" /><span class="sig-meta">${esc(sig.signerName)} · ${fmtDate(sig.signedAt)}</span></span>`;
@@ -35,11 +44,11 @@ function fieldHtml(kind: FieldKind, name: string, ctx: RenderContext): string {
     if (kind === "date") return `<span class="sig-field signed inline" data-kind="date"><span class="sig-value">${fmtDate(sig.signedAt)}</span><span class="sig-meta">Date</span></span>`;
     return `<span class="sig-field signed inline" data-kind="initials"><span class="sig-value sig-initials">${esc(initialsOf(sig.signerName))}</span><span class="sig-meta">Initials</span></span>`;
   }
-  return `<span class="sig-field${mine ? " mine" : ""}${kind !== "sign" ? " inline" : ""}" data-kind="${kind}"><span class="sig-label">${mine ? "Sign here" : label}</span><span class="sig-name">${who}</span></span>`;
+  return `<span class="sig-field${mine ? " mine" : ""}${kind !== "sign" ? " inline" : ""}" data-kind="${kind}"><span class="sig-label">${mine ? (kind === "sign" ? "Sign here" : kind === "date" ? "Dated on signing" : "Initial here") : caption}</span><span class="sig-name">${who}</span></span>`;
 }
 
 export function renderMarkdown(md: string, ctx: RenderContext = {}): string {
   const html = marked.parse(md, { async: false }) as string;
   const clean = DOMPurify.sanitize(html, { USE_PROFILES: { html: true }, FORBID_TAGS: ["style", "script", "iframe", "form", "input"] });
-  return clean.replace(FIELD_RE, (_m, kind: string, name: string) => fieldHtml(kind.toLowerCase() as FieldKind, name.trim(), ctx));
+  return clean.replace(FIELD_RE, (_m, kind: string, name: string, label?: string) => fieldHtml(kind.toLowerCase() as FieldKind, name.trim(), (label ?? "").trim(), ctx));
 }

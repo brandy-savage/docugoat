@@ -2,7 +2,7 @@ import { relay } from "./api";
 import { BACKEND, currentWriteToken, transport } from "./config";
 import { BASE_URL } from "./env";
 import {
-  KDF_ITERATIONS, decryptJson, deriveKey, ecdsaSign, ecdsaVerify, encryptJson, fromB64, generateCode, generateContentKey,
+  KDF_ITERATIONS, decryptJson, deriveKey, ecdsaSign, ecdsaVerify, encryptJson, fieldsHash, fromB64, generateCode, generateContentKey,
   generateFragmentSecret, generateOwnerToken, randomBytes, sha256Hex, signingMessage, toB64, toHex, unwrapContentKey, verifyReceipt, wrapContentKey,
 } from "./crypto";
 import { sameName } from "./fields";
@@ -112,12 +112,14 @@ export async function recordView(opened: OpenedEnvelope) {
   await transport().postEvent(opened.envelope.id, { cipher: { name: "AES-GCM", iv: sealed.iv }, ciphertext: sealed.ciphertext }).catch(() => undefined);
 }
 
-export async function signEnvelope(opened: OpenedEnvelope, signerName: string, signatureImage: string) {
+export async function signEnvelope(opened: OpenedEnvelope, signerName: string, signatureImage: string, fields?: Record<string, string>) {
   const signedAt = new Date().toISOString();
-  const ecdsa = await ecdsaSign(signingMessage(opened.documentSha256, signerName, signedAt));
+  const fh = await fieldsHash(fields);
+  const ecdsa = await ecdsaSign(signingMessage(opened.documentSha256, signerName, signedAt, fh));
   const receipt = await attestOrNull(opened.envelope.id, "sign", opened.documentSha256);
   const payload: SignaturePayload = {
     v: 2, slot: opened.slot, signerName, signedAt, documentSha256: opened.documentSha256, signatureImage, ecdsa, userAgent: navigator.userAgent, receipt,
+    ...(fh ? { fields } : {}),
   };
   const sealed = await encryptJson(opened.key, payload);
   return transport().sign(opened.envelope.id, { cipher: { name: "AES-GCM", iv: sealed.iv }, ciphertext: sealed.ciphertext });
@@ -136,7 +138,7 @@ export async function loadSignatures(opened: OpenedEnvelope): Promise<VerifiedSi
         relayId: s.id,
         relayCreatedAt: s.createdAt,
         hashMatches: p.documentSha256 === opened.documentSha256,
-        ecdsaValid: await ecdsaVerify(signingMessage(p.documentSha256, p.signerName, p.signedAt), p.ecdsa),
+        ecdsaValid: await ecdsaVerify(signingMessage(p.documentSha256, p.signerName, p.signedAt, await fieldsHash(p.fields)), p.ecdsa),
         nameBound: !!recipient && (recipient.name === "" || sameName(recipient.name, p.signerName)),
         recipientName: recipient?.name ?? "",
         receiptValid: rc.valid,

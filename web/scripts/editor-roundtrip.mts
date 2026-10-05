@@ -20,19 +20,21 @@ const { buildDocDefinition } = await import("../src/lib/pdf");
 const md = TEMPLATES.find((t) => t.id === "nda")!.markdown;
 const editor = new Editor({ element: document.createElement("div"), extensions: [StarterKit, Markdown.configure({ html: false }), SignatureField], content: md });
 const chips = editor.state.doc.content.size && (() => { let n = 0; editor.state.doc.descendants((node) => { if (node.type.name === "signatureField") n++; }); return n; })();
-assert.equal(chips, 4); console.log("✓ NDA loads with 4 field chips in the editor");
+assert.equal(chips, 8); console.log("✓ NDA loads with 8 field chips in the editor (sign, date, text×2 per party)");
 
 const out = normalizeFieldTokens(editor.storage.markdown.getMarkdown());
-assert.equal(parseFields(out).length, 4); assert.ok(!out.includes("\\["), "no escaped brackets in serialized markdown"); console.log("✓ serializes back to clean [[sign: …]] tokens");
+assert.equal(parseFields(out).length, 8); assert.ok(!out.includes("\\["), "no escaped brackets in serialized markdown");
+assert.ok(out.includes("[[text: Party A | Full legal name]]"), out); console.log("✓ serializes back to clean tokens incl. [[text: Party A | Full legal name]]");
 
 // Simulate an edit: type into the doc, then re-serialize.
 editor.commands.insertContentAt(editor.state.doc.content.size, "<p>Extra clause typed by the user.</p>");
 const out2 = normalizeFieldTokens(editor.storage.markdown.getMarkdown());
-assert.equal(parseFields(out2).length, 4); assert.ok(out2.includes("Extra clause")); console.log("✓ editing does not destroy fields");
+assert.equal(parseFields(out2).length, 8); assert.ok(out2.includes("Extra clause")); console.log("✓ editing does not destroy fields");
 
 editor.commands.insertSignatureField({ kind: "sign", name: "ABC" });
+editor.commands.insertSignatureField({ kind: "check", name: "ABC", label: "I accept the terms" });
 const out3 = normalizeFieldTokens(editor.storage.markdown.getMarkdown());
-assert.equal(parseFields(out3).filter((f) => f.name === "ABC").length, 1); console.log("✓ insertSignatureField serializes as [[sign: ABC]]");
+assert.equal(parseFields(out3).filter((f) => f.name === "ABC").length, 2); assert.ok(out3.includes("[[check: ABC | I accept the terms]]")); console.log("✓ insertSignatureField serializes [[sign: ABC]] and [[check: ABC | I accept the terms]]");
 
 // Legacy escaped tokens (what the old editor produced) still work everywhere.
 const legacy = "## 6. Signatures\n\n\\[\\[sign: Party A\\]\\]\n\\[\\[date: Party A\\]\\]\n\n\\[\\[sign: ABC\\]\\]\n";

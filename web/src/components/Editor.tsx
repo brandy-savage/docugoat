@@ -10,7 +10,7 @@ import {
   Bold, Code, Heading1, Heading2, Heading3, Italic, Link2, List, ListOrdered, Minus, Quote, Redo2, Strikethrough, Undo2,
 } from "lucide-react";
 
-export interface InsertField { kind: FieldKind; name: string }
+export interface InsertField { kind: FieldKind; name: string; label?: string }
 interface Props { value: string; onChange: (md: string) => void; insertRef?: MutableRefObject<((field: InsertField) => void) | null> }
 
 function ToolbarButton({ active, onClick, title, children }: { active?: boolean; onClick: () => void; title: string; children: React.ReactNode }) {
@@ -83,7 +83,7 @@ export function Editor({ value, onChange, insertRef }: Props) {
     if (!insertRef) return;
     insertRef.current = (field: InsertField) => {
       if (mode === "raw" || !editor) {
-        const text = fieldToken(field.kind, field.name);
+        const text = fieldToken(field.kind, field.name, field.label);
         const next = raw.endsWith("\n") || raw === "" ? `${raw}${text}\n` : `${raw}\n\n${text}\n`;
         setRaw(next); onChange(next); editor?.commands.setContent(next);
       } else if (field.kind === "sign") {

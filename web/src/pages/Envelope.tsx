@@ -9,7 +9,7 @@ import { Pill, Spinner, Toast } from "../components/ui";
 import { RelayError } from "../lib/api";
 import { BACKEND, setLinkToken, transport } from "../lib/config";
 import { isVerified, loadAudit, loadSignatures, openEnvelope, recordView, signEnvelope, type OpenedEnvelope } from "../lib/envelope";
-import { parseFields, sameName } from "../lib/fields";
+import { INPUT_KINDS, fieldKey, parseFields, sameName, type Field } from "../lib/fields";
 import { downloadPdf } from "../lib/pdf";
 import type { AuditEvent, RelayEnvelope, VerifiedSignature } from "../lib/types";
 import { AuditTrail } from "../components/AuditTrail";
@@ -128,7 +128,10 @@ export function EnvelopePage() {
   const me = opened.me;
   const isOwner = me.role === "owner";
   const signers = opened.doc.recipients.filter((r) => r.role === "signer" || r.signs);
-  const myFields = parseFields(opened.doc.markdown).filter((f) => f.kind === "sign" && (me.name === "" || sameName(f.name, me.name)));
+  const allMine = parseFields(opened.doc.markdown).filter((f) => me.name === "" || sameName(f.name, me.name));
+  const myFields = allMine.filter((f) => f.kind === "sign");
+  const myInputs = allMine.filter((f) => INPUT_KINDS.includes(f.kind));
+  const myDates = allMine.filter((f) => f.kind === "date").length;
   const iCanSign = !isOwner || !!me.signs || myFields.length > 0;
 
   return (
@@ -156,7 +159,7 @@ export function EnvelopePage() {
 
         <aside className="no-print space-y-5 lg:sticky lg:top-20 lg:self-start">
           {iCanSign && !mySignature && (
-            <SignPanel opened={opened} fieldCount={myFields.length} canWrite={BACKEND !== "github" || !!frag.get("t") || !!record} onSigned={async (name) => {
+            <SignPanel opened={opened} fieldCount={myFields.length} dateCount={myDates} inputs={myInputs} canWrite={BACKEND !== "github" || !!frag.get("t") || !!record} onSigned={async (name) => {
               if (!isOwner) {
                 const rec: VaultRecord = { id, title: opened.doc.title, fragmentSecret, createdAt: new Date().toISOString(), expiresAt: opened.envelope.expiresAt, role: "signer", code, slot: opened.slot, signerName: name };
                 saveRecord(rec); setRecord(rec);
@@ -207,10 +210,12 @@ export function EnvelopePage() {
   );
 }
 
-function SignPanel({ opened, fieldCount, canWrite, onSigned, onError }: { opened: OpenedEnvelope; fieldCount: number; canWrite: boolean; onSigned: (name: string) => Promise<void>; onError: (m: string) => void }) {
+function SignPanel({ opened, fieldCount, dateCount, inputs, canWrite, onSigned, onError }: { opened: OpenedEnvelope; fieldCount: number; dateCount: number; inputs: Field[]; canWrite: boolean; onSigned: (name: string) => Promise<void>; onError: (m: string) => void }) {
   const pad = useRef<SignaturePadHandle>(null);
   const locked = opened.me.name !== "";
   const [name, setName] = useState(opened.me.name);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const missing = inputs.filter((f) => f.kind === "text" && !(values[fieldKey(f)] ?? "").trim());
   const [agree, setAgree] = useState(false);
   const [drawn, setDrawn] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -219,8 +224,11 @@ function SignPanel({ opened, fieldCount, canWrite, onSigned, onError }: { opened
   async function sign() {
     if (!name.trim()) return onError("Enter your full name.");
     if (!pad.current || pad.current.isEmpty()) return onError("Draw your signature.");
+    if (missing.length) return onError(`Fill in: ${missing.map((f) => f.label).join(", ")}`);
     setBusy(true);
-    try { await signEnvelope(opened, name.trim(), pad.current.toDataUrl()); await onSigned(name.trim()); }
+    const filled: Record<string, string> = {};
+    for (const f of inputs) { const v = values[fieldKey(f)]; if (f.kind === "check") filled[fieldKey(f)] = v === "yes" ? "yes" : "no"; else if (v?.trim()) filled[fieldKey(f)] = v.trim(); }
+    try { await signEnvelope(opened, name.trim(), pad.current.toDataUrl(), filled); await onSigned(name.trim()); }
     catch (e) { onError(e instanceof Error ? e.message : "Signing failed"); }
     finally { setBusy(false); }
   }
@@ -236,16 +244,33 @@ function SignPanel({ opened, fieldCount, canWrite, onSigned, onError }: { opened
         <input className={`input ${locked ? "opacity-70" : ""}`} value={name} readOnly={locked} onChange={(e) => setName(e.target.value)} placeholder="Full legal name" />
         {locked && <span className="mt-1.5 block text-[11px] text-bone-500">{opened.me.role === "owner" ? "You're signing with your owner code." : `Bound to the code ${opened.doc.author} issued to you.`}</span>}
       </label>
+      {inputs.length > 0 && (
+        <div className="space-y-3 rounded-xl border hairline bg-ink-900 p-3">
+          <span className="label mb-0">Fill in your fields</span>
+          {inputs.map((f) => f.kind === "check" ? (
+            <label key={fieldKey(f)} className="flex cursor-pointer items-start gap-2.5 text-sm">
+              <input type="checkbox" className="mt-1 accent-goat-500" checked={values[fieldKey(f)] === "yes"} onChange={(e) => setValues({ ...values, [fieldKey(f)]: e.target.checked ? "yes" : "no" })} />
+              <span>{f.label || "I agree"}</span>
+            </label>
+          ) : (
+            <label key={fieldKey(f)} className="block">
+              <span className="label">{f.label || "Text"}</span>
+              <input className="input" value={values[fieldKey(f)] ?? ""} onChange={(e) => setValues({ ...values, [fieldKey(f)]: e.target.value })} />
+            </label>
+          ))}
+        </div>
+      )}
       <div>
         <span className="label">Draw your signature</span>
         <SignaturePad ref={pad} onDraw={onDraw} />
+        {dateCount > 0 && <p className="mt-1.5 text-[11px] text-bone-500">Your {dateCount === 1 ? "date field" : `${dateCount} date fields`} will be stamped {new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })} when you sign.</p>}
       </div>
       <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-5 text-bone-400">
         <input type="checkbox" className="mt-1 accent-goat-500" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
         I have read this document and intend this to be my legally binding electronic signature.
       </label>
       {!canWrite && <p className="text-xs text-goat-400">This link has no write access to the store — ask the sender for the full link.</p>}
-      <button className="btn-primary w-full" disabled={busy || !agree || !name.trim() || !drawn || !canWrite} onClick={sign}>
+      <button className="btn-primary w-full" disabled={busy || !agree || !name.trim() || !drawn || !canWrite || missing.length > 0} onClick={sign}>
         {busy ? <><Spinner /> Signing &amp; encrypting…</> : "Sign document"}
       </button>
       <p className="text-[11px] leading-5 text-bone-500">Your mark is placed into every highlighted field. The relay stamps a signed receipt (time, IP, browser) that's sealed into your encrypted bundle — evidence for the certificate, never stored in the clear.</p>

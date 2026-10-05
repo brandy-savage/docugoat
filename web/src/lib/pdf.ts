@@ -1,6 +1,6 @@
 // On-device PDF: markdown -> pdfmake document definition, with signature fields resolved and a certificate page.
 import { marked, type Token, type Tokens } from "marked";
-import { FIELD_RE, initialsOf, sameName, type FieldKind } from "./fields";
+import { FIELD_LABEL, FIELD_RE, fieldKey, initialsOf, sameName, type FieldKind } from "./fields";
 import type { AuditEvent, DocumentPayload, VerifiedSignature } from "./types";
 
 type Content = any;
@@ -28,9 +28,18 @@ function inline(tokens: Token[] | undefined, style: { bold?: boolean; italics?: 
   return out;
 }
 
-function fieldBlock(kind: FieldKind, name: string, signatures: VerifiedSignature[]): Content {
+function fieldBlock(kind: FieldKind, name: string, label: string, signatures: VerifiedSignature[]): Content {
   const sig = signatures.find((s) => sameName(s.signerName, name) || (name === "" && s.slot > 0));
   const who = name || "Signer";
+  const caption = label || FIELD_LABEL[kind];
+  if (kind === "check") {
+    const on = sig?.fields?.[fieldKey({ kind, name, label })] === "yes";
+    return { columns: [{ width: 14, text: on ? "☑" : "☐", fontSize: 12 }, { width: "*", stack: [{ text: caption }, { text: who, fontSize: 8, color: MUTED }] }], margin: [0, 4, 0, 6], unbreakable: true };
+  }
+  if (kind === "text") {
+    const value = sig?.fields?.[fieldKey({ kind, name, label })] ?? "";
+    return { columns: [{ width: 220, stack: [{ text: value || " ", fontSize: 11, margin: [0, 2, 0, 1] }, { canvas: [{ type: "line", x1: 0, y1: 0, x2: 220, y2: 0, lineWidth: 0.8, lineColor: LINE }] }, { text: `${caption}  ·  ${who}`, fontSize: 8, color: MUTED, margin: [0, 2, 0, 0] }] }], margin: [0, 6, 0, 8], unbreakable: true };
+  }
   if (kind === "sign") {
     const body: Content[] = sig
       ? [{ image: sig.signatureImage, fit: [150, 48], margin: [0, 2, 0, 2] }, { text: `${sig.signerName}  ·  ${fmtDate(sig.signedAt)}`, fontSize: 8.5, color: MUTED }]
@@ -38,8 +47,7 @@ function fieldBlock(kind: FieldKind, name: string, signatures: VerifiedSignature
     return { table: { widths: [220], body: [[{ stack: body, margin: [8, 6, 8, 6] }]] }, layout: { hLineColor: () => LINE, vLineColor: () => LINE, hLineWidth: (i: number, n: any) => (i === n.table.body.length ? 1 : 0), vLineWidth: () => 0 }, margin: [0, 8, 0, 10], unbreakable: true };
   }
   const value = sig ? (kind === "date" ? fmtDate(sig.signedAt) : initialsOf(sig.signerName)) : "";
-  const label = kind === "date" ? "Date" : "Initials";
-  return { columns: [{ width: 120, stack: [{ text: value || " ", fontSize: 11, margin: [0, 2, 0, 1] }, { canvas: [{ type: "line", x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 0.8, lineColor: LINE }] }, { text: `${label}  ·  ${who}`, fontSize: 8, color: MUTED, margin: [0, 2, 0, 0] }] }], margin: [0, 6, 0, 8], unbreakable: true };
+  return { columns: [{ width: 120, stack: [{ text: value || " ", fontSize: 11, margin: [0, 2, 0, 1] }, { canvas: [{ type: "line", x1: 0, y1: 0, x2: 120, y2: 0, lineWidth: 0.8, lineColor: LINE }] }, { text: `${caption}  ·  ${who}`, fontSize: 8, color: MUTED, margin: [0, 2, 0, 0] }] }], margin: [0, 6, 0, 8], unbreakable: true };
 }
 
 function paragraphWithFields(p: Tokens.Paragraph, signatures: VerifiedSignature[]): Content[] {
@@ -51,7 +59,7 @@ function paragraphWithFields(p: Tokens.Paragraph, signatures: VerifiedSignature[
   for (const m of raw.matchAll(FIELD_RE)) {
     const before = raw.slice(last, m.index).trim();
     if (before) out.push({ text: inline(marked.lexer(before).flatMap((t: any) => t.tokens ?? [])), margin: [0, 0, 0, 6] });
-    out.push(fieldBlock(m[1].toLowerCase() as FieldKind, m[2].trim(), signatures));
+    out.push(fieldBlock(m[1].toLowerCase() as FieldKind, m[2].trim(), (m[3] ?? "").trim(), signatures));
     last = m.index! + m[0].length;
   }
   const tail = raw.slice(last).trim();
@@ -82,7 +90,7 @@ function certificate(doc: DocumentPayload, envelopeId: string, sha: string, sign
   const rows = signatures.map((s) => {
     const ok = s.hashMatches && s.ecdsaValid && s.nameBound;
     return [
-      { stack: [{ text: s.signerName, bold: true }, { text: s.slot === 0 ? "sender's own code" : s.recipientName && !sameName(s.recipientName, s.signerName) ? `code issued to ${s.recipientName}` : `code issued to this signer`, fontSize: 8, color: MUTED }, ...(s.receiptBody ? [{ text: `ip ${s.receiptBody.ip}`, fontSize: 7.5, color: MUTED }] : [])] },
+      { stack: [{ text: s.signerName, bold: true }, { text: s.slot === 0 ? "sender's own code" : s.recipientName && !sameName(s.recipientName, s.signerName) ? `code issued to ${s.recipientName}` : `code issued to this signer`, fontSize: 8, color: MUTED }, ...(s.receiptBody ? [{ text: `ip ${s.receiptBody.ip}`, fontSize: 7.5, color: MUTED }] : []), ...Object.entries(s.fields ?? {}).map(([k, v]) => ({ text: `${k.split(":")[2] || k.split(":")[0]}: ${v}`, fontSize: 7.5, color: MUTED }))] },
       { stack: [{ text: new Date(s.signedAt).toUTCString(), fontSize: 8.5 }, { text: `relay ${s.receiptValid === true ? "attested" : s.receiptValid === false ? "ATTESTATION INVALID" : "received"} ${new Date(s.receiptBody?.receivedAt ?? s.relayCreatedAt).toISOString()}`, fontSize: 7.5, color: MUTED }] },
       { stack: [{ text: ok ? "VERIFIED" : s.hashMatches ? (s.nameBound ? "BAD SIGNATURE" : "NAME MISMATCH") : "CONTENT MISMATCH", bold: true, color: ok ? "#1f7a4d" : "#b3261e", fontSize: 8.5 }, { text: `key ${s.ecdsa.fingerprint}`, fontSize: 7.5, color: MUTED }] },
       { image: s.signatureImage, fit: [110, 36] },

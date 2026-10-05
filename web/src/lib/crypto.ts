@@ -100,8 +100,15 @@ export async function decryptJson<T>(key: CryptoKey, sealed: Sealed): Promise<T>
 // Per-signature ECDSA P-256 keypair, generated on the signer's device.
 export interface EcdsaSignature { publicKeyJwk: JsonWebKey; signature: string; fingerprint: string }
 
-export function signingMessage(documentSha256: string, signerName: string, signedAt: string): string {
-  return `docugoat:v1:${documentSha256}:${signerName}:${signedAt}`;
+export function signingMessage(documentSha256: string, signerName: string, signedAt: string, fieldsSha256?: string): string {
+  return `docugoat:v1:${documentSha256}:${signerName}:${signedAt}${fieldsSha256 ? `:${fieldsSha256}` : ""}`;
+}
+
+/** Canonical hash of a signer's filled field values (sorted keys), or undefined when there are none. */
+export async function fieldsHash(fields?: Record<string, string>): Promise<string | undefined> {
+  const entries = Object.entries(fields ?? {}).filter(([, v]) => v !== "").sort(([a], [b]) => a.localeCompare(b));
+  if (entries.length === 0) return undefined;
+  return sha256Hex(JSON.stringify(entries));
 }
 
 export async function ecdsaSign(message: string): Promise<EcdsaSignature> {

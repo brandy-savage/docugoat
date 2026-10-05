@@ -36,9 +36,15 @@ These obligations survive for **three (3) years** from the effective date.
 
 ## 6. Signatures
 
+**Party A**
+[[text: Party A | Full legal name]]
+[[text: Party A | Company]]
 [[sign: Party A]]
 [[date: Party A]]
 
+**Party B**
+[[text: Party B | Full legal name]]
+[[text: Party B | Company]]
 [[sign: Party B]]
 [[date: Party B]]
 `,
@@ -75,9 +81,13 @@ Either party may terminate on 14 days' written notice. Client pays for work comp
 
 ## 7. Signatures
 
+[[check: Client | I have reviewed Schedule A and accept the fee schedule]]
+
+[[text: Client | Billing address]]
 [[sign: Client]]
 [[date: Client]]
 
+[[text: Contractor | Business name]]
 [[sign: Contractor]]
 [[date: Contractor]]
 
@@ -98,10 +108,11 @@ I, the undersigned, consent to the activity described below and release the orga
 Describe the activity, date and location here.
 
 ## Acknowledgements
-- I have read and understood this document.
-- I am participating voluntarily.
-- I am 18 or older, or a guardian is signing on my behalf.
+[[check: Participant | I have read and understood this document]]
+[[check: Participant | I am participating voluntarily]]
+[[check: Participant | I am 18 or older, or a guardian is signing on my behalf]]
 
+[[text: Participant | Emergency contact (name and phone)]]
 [[initials: Participant]]
 
 ## Signature

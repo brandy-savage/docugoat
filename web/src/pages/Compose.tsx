@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CalendarDays, Eye, FileSignature, Lock, PenLine, Plus, ShieldAlert, Type, X } from "lucide-react";
+import { CalendarDays, CheckSquare, Eye, FileSignature, Lock, PenLine, Plus, ShieldAlert, TextCursorInput, Type, X } from "lucide-react";
 import { DocumentView } from "../components/DocumentView";
-import { Editor } from "../components/Editor";
+import { Editor, type InsertField } from "../components/Editor";
 import { Field, Spinner, Toast } from "../components/ui";
 import { sealDocument } from "../lib/envelope";
 import { FIELD_RE, fieldToken, parseFields, sameName } from "../lib/fields";
@@ -25,7 +25,7 @@ export function Compose() {
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<{ m: string; tone?: "bad" | "good" } | null>(null);
   const [restored, setRestored] = useState(!!draft);
-  const insertRef = useRef<((field: { kind: "sign" | "date" | "initials"; name: string }) => void) | null>(null);
+  const insertRef = useRef<((field: InsertField) => void) | null>(null);
 
   const title = titleFromMarkdown(markdown);
   const fields = useMemo(() => parseFields(markdown), [markdown]);
@@ -47,7 +47,13 @@ export function Compose() {
     if (n && !signers.some((s) => sameName(s, n))) setSigners([...signers, n]);
     setSignerDraft("");
   }
-  function insert(kind: "sign" | "date" | "initials", name: string) {
+  function insert(kind: "sign" | "date" | "initials" | "text" | "check", name: string) {
+    if (kind === "text" || kind === "check") {
+      const label = window.prompt(kind === "text" ? "Label for this text field (e.g. Company name, Address, Title)" : "Checkbox statement (e.g. I have read Schedule A)", "");
+      if (label === null) return;
+      insertRef.current?.({ kind, name, label: label.trim() || (kind === "text" ? "Text" : "I agree") });
+      return;
+    }
     insertRef.current?.({ kind, name });
   }
   /** Rename a party everywhere: the signer list and every field token that references them. */
@@ -140,6 +146,8 @@ export function Compose() {
                   <button type="button" className="btn-secondary btn-sm" onClick={() => insert("sign", author.trim())}><PenLine size={12} /> Signature</button>
                   <button type="button" className="btn-secondary btn-sm" onClick={() => insert("date", author.trim())}><CalendarDays size={12} /> Date</button>
                   <button type="button" className="btn-secondary btn-sm" onClick={() => insert("initials", author.trim())}><Type size={12} /> Initials</button>
+                  <button type="button" className="btn-secondary btn-sm" onClick={() => insert("text", author.trim())}><TextCursorInput size={12} /> Text</button>
+                  <button type="button" className="btn-secondary btn-sm" onClick={() => insert("check", author.trim())}><CheckSquare size={12} /> Checkbox</button>
                 </div>
               </div>
             )}
@@ -164,10 +172,12 @@ export function Compose() {
                         </div>
                       </div>
                       {!preview && (
-                        <div className="mt-2 flex gap-1.5">
+                        <div className="mt-2 flex flex-wrap gap-1.5">
                           <button type="button" className="btn-secondary btn-sm" onClick={() => insert("sign", s)} title="Insert signature field"><PenLine size={12} /> Signature</button>
                           <button type="button" className="btn-secondary btn-sm" onClick={() => insert("date", s)} title="Insert date field"><CalendarDays size={12} /> Date</button>
                           <button type="button" className="btn-secondary btn-sm" onClick={() => insert("initials", s)} title="Insert initials field"><Type size={12} /> Initials</button>
+                          <button type="button" className="btn-secondary btn-sm" onClick={() => insert("text", s)} title="Insert a fillable text field"><TextCursorInput size={12} /> Text</button>
+                          <button type="button" className="btn-secondary btn-sm" onClick={() => insert("check", s)} title="Insert a checkbox"><CheckSquare size={12} /> Checkbox</button>
                         </div>
                       )}
                     </li>
@@ -195,7 +205,7 @@ export function Compose() {
                 <option value={7}>7 days</option><option value={30}>30 days</option><option value={90}>90 days</option>
               </select>
             </Field>
-            <p className="flex items-start gap-2 text-[11px] leading-5 text-bone-500"><FileSignature size={13} className="mt-0.5 shrink-0" /> Fields are plain markdown tokens like <span className="kbd">[[sign: Name]]</span> — type them by hand in Markdown mode if you prefer.</p>
+            <p className="flex items-start gap-2 text-[11px] leading-5 text-bone-500"><FileSignature size={13} className="mt-0.5 shrink-0" /> Fields are plain markdown tokens — <span className="kbd">[[sign: Name]]</span>, <span className="kbd">[[date: Name]]</span>, <span className="kbd">[[initials: Name]]</span>, <span className="kbd">[[text: Name | Label]]</span>, <span className="kbd">[[check: Name | Statement]]</span>. Type them by hand in Markdown mode if you prefer. Dates are stamped automatically when that person signs.</p>
           </div>
         </aside>
       </div>

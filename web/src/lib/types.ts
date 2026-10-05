@@ -34,6 +34,8 @@ export interface SignaturePayload {
   ecdsa: { publicKeyJwk: JsonWebKey; signature: string; fingerprint: string };
   userAgent: string;
   receipt?: AttestedReceipt;
+  /** Values the signer entered for their text/check fields, keyed by fieldKey(). Bound into the ECDSA message. */
+  fields?: Record<string, string>;
 }
 
 export interface ViewEventPayload {

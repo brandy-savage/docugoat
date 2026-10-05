@@ -132,3 +132,9 @@ body {
 .field-chip-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #f5b400; }
 .field-chip-name { color: #e6e4dc; font-weight: 500; }
 .ProseMirror-selectednode.field-chip { outline: 2px solid #f5b400; outline-offset: 1px; }
+
+.sig-field.check { flex-direction: row; align-items: center; gap: 8px; min-height: 40px; }
+.sig-field .sig-check { font-size: 18px; line-height: 1; color: #f4f3ee; }
+.sig-field.check .sig-value { font-size: 13.5px; }
+.sig-field.check .sig-meta { margin: 0 0 0 auto; }
+.field-chip-text, .field-chip-check { border-style: dotted; }
