@@ -13,8 +13,10 @@ cp web/dist/index.html web/dist/404.html
 touch web/dist/.nojekyll
 WT=$(mktemp -d)
 git worktree add --detach "$WT" >/dev/null
-( cd "$WT" && git checkout --orphan gh-pages >/dev/null 2>&1 && git rm -rfq . && cp -r "$OLDPWD/web/dist/." . && git add -A \
+TMPBRANCH="gh-pages-build-$$"
+( cd "$WT" && git checkout --orphan "$TMPBRANCH" && git rm -rfq . && cp -r "$OLDPWD/web/dist/." . && git add -A \
   && git -c user.name="docugoat deploy" -c user.email="deploy@docugoat.local" commit -qm "Deploy $(git -C "$OLDPWD" rev-parse --short HEAD) to GitHub Pages" \
-  && git push -f "$REMOTE" gh-pages:gh-pages )
+  && git push -f "$REMOTE" "$TMPBRANCH:gh-pages" )
 git worktree remove --force "$WT"
+git branch -D "$TMPBRANCH" >/dev/null 2>&1 || true
 echo "published gh-pages"
