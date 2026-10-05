@@ -4,8 +4,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 REPO=$(basename "$(git rev-parse --show-toplevel)")
 REMOTE=${REMOTE:-origin}
-echo "building with VITE_BASE=/$REPO/ VITE_RELAY_URL=${RELAY_URL:-<unset>}"
-VITE_BASE="/$REPO/" VITE_RELAY_URL="${RELAY_URL:-}" npm run build --workspace web
+OWNER=$(gh repo view --json owner -q .owner.login 2>/dev/null || git remote get-url "$REMOTE" | sed -E 's#.*[:/]([^/]+)/[^/]+(\.git)?$#\1#')
+BACKEND=${BACKEND:-github}
+DATA_REPO=${DATA_REPO:-docugoat-data}
+echo "building with VITE_BASE=/$REPO/ VITE_BACKEND=$BACKEND VITE_GH_OWNER=$OWNER VITE_GH_DATA_REPO=$DATA_REPO VITE_RELAY_URL=${RELAY_URL:-<unset>}"
+VITE_BASE="/$REPO/" VITE_BACKEND="$BACKEND" VITE_GH_OWNER="$OWNER" VITE_GH_DATA_REPO="$DATA_REPO" VITE_RELAY_URL="${RELAY_URL:-}" npm run build --workspace web
 cp web/dist/index.html web/dist/404.html
 touch web/dist/.nojekyll
 WT=$(mktemp -d)

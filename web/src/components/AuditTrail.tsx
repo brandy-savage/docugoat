@@ -20,9 +20,9 @@ export function AuditTrail({ events, compact = false }: { events: AuditEvent[]; 
             </div>
             {!compact && (
               <p className="mono mt-0.5 text-[11px] text-bone-500">
-                {e.ip ? `ip ${e.ip}` : "ip —"}{e.userAgent ? ` · ${shortUa(e.userAgent)}` : ""}
+                {e.ip ? `ip ${e.ip}` : e.ref ? `github commit ${e.ref}` : "ip —"}{e.userAgent ? ` · ${shortUa(e.userAgent)}` : ""}{e.recordedAt ? ` · recorded ${new Date(e.recordedAt).toISOString().slice(0, 19).replace("T", " ")}Z` : ""}
                 {" · "}
-                {e.attested === true ? <span className="text-moss-400"><ShieldCheck size={10} className="inline" /> relay-attested</span>
+                {e.attested === true ? <span className="text-moss-400"><ShieldCheck size={10} className="inline" /> {e.ref ? "github-recorded" : "relay-attested"}</span>
                   : e.attested === false ? <span className="text-blood-400"><ShieldOff size={10} className="inline" /> attestation invalid</span>
                   : <span><ShieldQuestion size={10} className="inline" /> unattested</span>}
               </p>

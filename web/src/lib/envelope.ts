@@ -1,4 +1,6 @@
 import { relay } from "./api";
+import { BACKEND, currentWriteToken, transport } from "./config";
+import { BASE_URL } from "./env";
 import {
   KDF_ITERATIONS, decryptJson, deriveKey, ecdsaSign, ecdsaVerify, encryptJson, fromB64, generateCode, generateContentKey,
   generateFragmentSecret, generateOwnerToken, randomBytes, sha256Hex, signingMessage, toB64, toHex, unwrapContentKey, verifyReceipt, wrapContentKey,
@@ -8,9 +10,11 @@ import { canonicalMarkdown } from "./markdown";
 import type { AttestedReceipt, AuditEvent, DocumentPayload, Recipient, ReceiptBody, RelayEnvelope, SignaturePayload, VerifiedSignature, ViewEventPayload } from "./types";
 import { findRecord, saveRecord, type IssuedCode } from "./vault";
 
-export function envelopeUrl(id: string, fragmentSecret: string): string {
-  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-  return `${location.origin}${base}/d/${id}#k=${fragmentSecret}`;
+/** Signer link. On the GitHub backend it also carries the data-repo write token (in the fragment, never sent to any server but GitHub's API). */
+export function envelopeUrl(id: string, fragmentSecret: string, token = currentWriteToken()): string {
+  const base = BASE_URL.replace(/\/$/, "");
+  const t = BACKEND === "github" && token ? `&t=${encodeURIComponent(token)}` : "";
+  return `${location.origin}${base}/d/${id}#k=${fragmentSecret}${t}`;
 }
 
 export interface SealInput { title: string; markdown: string; author: string; authorSigns: boolean; signerNames: string[]; ttlDays: number }
@@ -39,7 +43,7 @@ export async function sealDocument(input: SealInput): Promise<SealResult> {
   }
   const sealed = await encryptJson(contentKey, doc);
   const documentSha256 = await sha256Hex(doc.markdown);
-  const res = await relay.seal({
+  const res = await transport().seal({
     documentSha256,
     kdf: { name: "PBKDF2", hash: "SHA-256", iterations: KDF_ITERATIONS, salt: toB64(salt) },
     wraps,
@@ -79,12 +83,15 @@ export async function openEnvelope(envelope: RelayEnvelope, code: string, fragme
 
 let relayKeyCache: Promise<string | undefined> | null = null;
 function relayKey(): Promise<string | undefined> {
+  if (BACKEND !== "relay") return Promise.resolve(undefined);
   if (!relayKeyCache) relayKeyCache = relay.relayKey().then((k) => k.publicKey).catch(() => undefined);
   return relayKeyCache;
 }
 
 async function attestOrNull(id: string, action: "view" | "sign", sha: string): Promise<AttestedReceipt | undefined> {
-  try { return await relay.attest(id, action, sha, toHex(randomBytes(8))); } catch { return undefined; }
+  const t = transport();
+  if (!t.attest) return undefined;
+  try { return await t.attest(id, action, sha, toHex(randomBytes(8))); } catch { return undefined; }
 }
 
 async function checkReceipt(r: AttestedReceipt | undefined): Promise<{ valid: boolean | null; body: ReceiptBody | null }> {
@@ -102,7 +109,7 @@ export async function recordView(opened: OpenedEnvelope) {
   const receipt = await attestOrNull(opened.envelope.id, "view", opened.documentSha256);
   const payload: ViewEventPayload = { v: 1, kind: "viewed", slot: opened.slot, name: opened.me.name, at: new Date().toISOString(), receipt };
   const sealed = await encryptJson(opened.key, payload);
-  await relay.postEvent(opened.envelope.id, { cipher: { name: "AES-GCM", iv: sealed.iv }, ciphertext: sealed.ciphertext }).catch(() => undefined);
+  await transport().postEvent(opened.envelope.id, { cipher: { name: "AES-GCM", iv: sealed.iv }, ciphertext: sealed.ciphertext }).catch(() => undefined);
 }
 
 export async function signEnvelope(opened: OpenedEnvelope, signerName: string, signatureImage: string) {
@@ -113,11 +120,11 @@ export async function signEnvelope(opened: OpenedEnvelope, signerName: string, s
     v: 2, slot: opened.slot, signerName, signedAt, documentSha256: opened.documentSha256, signatureImage, ecdsa, userAgent: navigator.userAgent, receipt,
   };
   const sealed = await encryptJson(opened.key, payload);
-  return relay.sign(opened.envelope.id, { cipher: { name: "AES-GCM", iv: sealed.iv }, ciphertext: sealed.ciphertext });
+  return transport().sign(opened.envelope.id, { cipher: { name: "AES-GCM", iv: sealed.iv }, ciphertext: sealed.ciphertext });
 }
 
 export async function loadSignatures(opened: OpenedEnvelope): Promise<VerifiedSignature[]> {
-  const { signatures } = await relay.signatures(opened.envelope.id);
+  const signatures = await transport().signatures(opened.envelope.id);
   const out: VerifiedSignature[] = [];
   for (const s of signatures) {
     try {
@@ -147,23 +154,26 @@ export const isVerified = (s: VerifiedSignature) => s.hashMatches && s.ecdsaVali
 /** Full audit trail: seal (from the owner's vault receipt), views, signatures — verified, sorted. */
 export async function loadAudit(opened: OpenedEnvelope, signatures: VerifiedSignature[]): Promise<AuditEvent[]> {
   const events: AuditEvent[] = [];
+  const t = transport();
+  const times: Record<string, { date: string; sha: string; verified: boolean }> = t.commitTimes ? await t.commitTimes(opened.envelope.id).catch(() => ({})) : {};
+  const gh = (key: string) => times[key] ? { attested: true as const, recordedAt: times[key].date, ref: times[key].sha.slice(0, 7) } : {};
   const rec = findRecord(opened.envelope.id);
   const sealRc = await checkReceipt(rec?.sealReceipt);
-  events.push({ kind: "sealed", at: opened.doc.createdAt, who: opened.doc.author, slot: 0, ip: sealRc.body?.ip, userAgent: sealRc.body?.userAgent, attested: sealRc.valid });
+  events.push({ kind: "sealed", at: opened.doc.createdAt, who: opened.doc.author, slot: 0, ip: sealRc.body?.ip, userAgent: sealRc.body?.userAgent, attested: sealRc.valid, ...gh("envelope") });
   try {
-    const { events: raw } = await relay.events(opened.envelope.id);
+    const raw = await t.events(opened.envelope.id);
     for (const e of raw) {
       try {
         const p = await decryptJson<ViewEventPayload>(opened.key, { iv: e.cipher.iv, ciphertext: e.ciphertext });
         if (p.kind !== "viewed") continue;
         const rc = await checkReceipt(p.receipt);
         const recipient = opened.doc.recipients.find((r) => r.slot === p.slot);
-        events.push({ kind: "viewed", at: p.at, who: recipient?.name || p.name || "open signer", slot: p.slot, ip: rc.body?.ip, userAgent: rc.body?.userAgent, attested: rc.valid, relayId: e.id });
+        events.push({ kind: "viewed", at: p.at, who: recipient?.name || p.name || "open signer", slot: p.slot, ip: rc.body?.ip, userAgent: rc.body?.userAgent, attested: rc.valid, relayId: e.id, ...gh(e.id) });
       } catch { /* not ours */ }
     }
   } catch { /* relay unreachable: still show what we have */ }
   for (const s of signatures) {
-    events.push({ kind: "signed", at: s.signedAt, who: s.signerName, slot: s.slot, ip: s.receiptBody?.ip, userAgent: s.receiptBody?.userAgent, attested: s.receiptValid, relayId: s.relayId });
+    events.push({ kind: "signed", at: s.signedAt, who: s.signerName, slot: s.slot, ip: s.receiptBody?.ip, userAgent: s.receiptBody?.userAgent, attested: s.receiptValid, relayId: s.relayId, ...gh(s.relayId) });
   }
   return events.sort((a, b) => a.at.localeCompare(b.at));
 }

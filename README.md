@@ -8,6 +8,15 @@ Zero-knowledge e-signatures. Write in markdown, seal it in your browser, hand ea
 - **Relay-attested audit trail** — the relay Ed25519-signs time / IP / user agent / hash at seal, view and sign; the browser encrypts the receipt into the bundle. The relay keeps no plaintext IP log.
 - **On-device PDF** — document, filled signatures, certificate and audit trail (pdfmake).
 
+## Two ways to run it
+
+| Mode | Where ciphertext lives | Evidence per event | Needs |
+| --- | --- | --- | --- |
+| **Serverless (GitHub Pages)** | a public *data repo* on GitHub, written straight from the browser via the Contents API | GitHub-recorded commit time + sha | a fine-grained token with Contents: read/write on the data repo |
+| **Relay** | an Express relay you host, isolated git repo on disk | relay Ed25519 receipt: time, IP, user agent, hash | a server with public HTTPS |
+
+In serverless mode the owner signs in with a **username + passphrase**. Those derive a key that encrypts the owner's vault (envelope codes, link secrets, the data-repo token), and the encrypted vault is stored in the data repo too — so any device with the two secrets can pick up where another left off. Signers never need an account: their link carries the data-repo write token in the URL fragment, so their browser can commit the encrypted signature itself.
+
 ## Layout
 
 | Path | What |
@@ -28,15 +37,13 @@ Tests (`cd web`): `npm test` — editor round-trip in jsdom, PDF render through 
 
 ## Deploy
 
-### Web app → GitHub Pages
+### Web app → GitHub Pages (serverless)
 
-`npm run deploy:pages` builds `web/` with `VITE_BASE=/<repo>/` and pushes the output to the `gh-pages` branch, which GitHub Pages serves. Pass the relay origin so the static site knows where to talk:
+1. Create a **public** data repo (default name `docugoat-data`). It will only ever contain ciphertext.
+2. `npm run deploy:pages` builds `web/` with `VITE_BASE=/<repo>/ VITE_BACKEND=github VITE_GH_OWNER=<you> VITE_GH_DATA_REPO=docugoat-data` and pushes the output to the `gh-pages` branch. Override with `DATA_REPO=…`, or `BACKEND=relay RELAY_URL=https://relay.example.com` for relay mode.
+3. On the site, open **Sign in → Create**: choose a username and passphrase, and paste a **fine-grained personal access token** (GitHub → Settings → Developer settings → Fine-grained tokens) scoped to the data repo with *Contents: Read and write*. That token is encrypted into your vault and travels inside signer links; it can write to that one repo and nothing else.
 
-```sh
-RELAY_URL=https://relay.example.com npm run deploy:pages
-```
-
-Without `RELAY_URL` the site loads and drafting works, but sealing cannot reach a relay.
+Rate limits: anonymous GitHub API reads are 60/hour per IP; authenticated ones (owners signed in, signers via the link token) are 5,000/hour.
 
 An equivalent GitHub Actions workflow lives at `deploy/pages-workflow.yml`; move it to `.github/workflows/pages.yml` once your token has the `workflow` scope (`gh auth refresh -s workflow`) and set the repository variable `RELAY_URL`.
 

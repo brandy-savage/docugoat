@@ -107,18 +107,18 @@ function certificate(doc: DocumentPayload, envelopeId: string, sha: string, sign
     { text: "Audit trail", fontSize: 12, bold: true, margin: [0, 22, 0, 6] },
     {
       table: { headerRows: 1, widths: [58, 118, "*", 92, 62], body: [
-        [{ text: "Event", bold: true }, { text: "When (UTC)", bold: true }, { text: "Who", bold: true }, { text: "IP", bold: true }, { text: "Attested", bold: true }],
+        [{ text: "Event", bold: true }, { text: "When (UTC)", bold: true }, { text: "Who", bold: true }, { text: "IP / record", bold: true }, { text: "Attested", bold: true }],
         ...audit.map((e) => [
           { text: { sealed: "Sealed", viewed: "Viewed", signed: "Signed" }[e.kind] },
-          { text: new Date(e.at).toISOString().replace("T", " ").slice(0, 19) },
+          { stack: [{ text: new Date(e.at).toISOString().replace("T", " ").slice(0, 19) }, ...(e.recordedAt ? [{ text: `recorded ${new Date(e.recordedAt).toISOString().replace("T", " ").slice(0, 19)}`, fontSize: 6.5, color: MUTED }] : [])] },
           { stack: [{ text: e.who }, ...(e.userAgent ? [{ text: e.userAgent.slice(0, 90), fontSize: 6.5, color: MUTED }] : [])] },
-          { text: e.ip ?? "—" },
+          { text: e.ip ?? (e.ref ? `commit ${e.ref}` : "—") },
           { text: e.attested === true ? "yes" : e.attested === false ? "INVALID" : "no", color: e.attested === false ? "#b3261e" : e.attested ? "#1f7a4d" : MUTED },
         ]),
       ] },
       layout: { hLineColor: () => LINE, vLineColor: () => LINE, paddingTop: () => 4, paddingBottom: () => 4 }, fontSize: 8,
     },
-    { text: "Each signature is an ECDSA P-256 signature over docugoat:v1:<sha256>:<signer>:<time>, produced by a key generated on the signer's device and relayed as ciphertext under the envelope key. 'Attested' events carry a receipt (time, IP, user agent, document hash) signed by the relay's Ed25519 key at the moment the action reached it; the receipt was encrypted into the bundle by the signer's browser, so the relay retains no plaintext record of it. Identity is established by possession of the recipient's access code, delivered by the sender out-of-band.", fontSize: 8, color: MUTED, margin: [0, 16, 0, 0], lineHeight: 1.3 },
+    { text: "Each signature is an ECDSA P-256 signature over docugoat:v1:<sha256>:<signer>:<time>, produced by a key generated on the signer's device and stored as ciphertext under the envelope key. Relay-attested events carry a receipt (time, IP, user agent, document hash) signed by the relay's Ed25519 key, encrypted into the bundle by the signer's browser so the relay retains no plaintext record. GitHub-recorded events cite the commit GitHub created when the ciphertext was written and the time GitHub's servers stamped on it. Identity is established by possession of the recipient's access code, delivered by the sender out-of-band.", fontSize: 8, color: MUTED, margin: [0, 16, 0, 0], lineHeight: 1.3 },
   ];
 }
 

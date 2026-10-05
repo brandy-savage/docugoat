@@ -20,7 +20,18 @@ export function Security() {
         <Row k="Encrypted events" v="'Viewed' events, as ciphertext, so the owner can see who opened the document and when." />
       </dl>
 
-      <h2 className="mt-10 text-lg font-semibold">IP addresses and the audit trail</h2>
+      <h2 className="mt-10 text-lg font-semibold">Serverless mode: GitHub as the store</h2>
+      <p className="mt-2 text-sm leading-6 text-bone-400">
+        When docugoat runs from GitHub Pages there is no relay at all. Your browser writes ciphertext straight into a public data repository through
+        GitHub's API, and reads it back the same way. GitHub sees exactly what the relay would: opaque blobs, KDF salts, timestamps. The owner's vault
+        (envelope codes, link secrets, the repo token) is encrypted under a key derived from their <em>username + passphrase</em> and stored in the same
+        repo, so signing in from a new device needs only those two secrets. Signer links carry the data-repo write token in the URL fragment so a signer's
+        browser can commit its own encrypted signature. Evidence per event is the commit GitHub created and the time GitHub's servers stamped on it; no IP
+        addresses are available in this mode. Honest limit: anyone holding a signer link holds that write token, so they could clutter or overwrite files in
+        the data repo (never read anything) — git history keeps every prior version, and the token is scoped to that one repository.
+      </p>
+
+      <h2 className="mt-10 text-lg font-semibold">IP addresses and the audit trail (relay mode)</h2>
       <p className="mt-2 text-sm leading-6 text-bone-400">
         DocuSign-style evidence (IP address, user agent, timestamp per event) matters for enforceability, so we produce it — without keeping it.
         When you view or sign, your browser asks the relay for a <em>receipt</em>: the relay signs (Ed25519) the current time, your IP, your user agent and the

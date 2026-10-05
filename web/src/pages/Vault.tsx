@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Flame, Trash2 } from "lucide-react";
 import { Pill } from "../components/ui";
-import { relay } from "../lib/api";
+import { transport, getSession, setSession } from "../lib/config";
+import { saveAccount } from "../lib/account";
 import { loadVault, removeRecord, type VaultRecord } from "../lib/vault";
 
 type Status = { status: "active" | "expired" | "burned" | "gone"; signatureCount: number };
@@ -13,7 +14,7 @@ export function Vault() {
 
   useEffect(() => {
     records.forEach((r) =>
-      relay.status(r.id)
+      transport().status(r.id)
         .then((s) => setStatus((m) => ({ ...m, [r.id]: { status: s.status, signatureCount: s.signatureCount } })))
         .catch(() => setStatus((m) => ({ ...m, [r.id]: { status: "gone", signatureCount: 0 } }))),
     );
@@ -21,10 +22,13 @@ export function Vault() {
 
   async function burn(r: VaultRecord) {
     if (!r.ownerToken || !confirm(`Burn "${r.title}"? This cannot be undone.`)) return;
-    await relay.burn(r.id, r.ownerToken).catch(() => undefined);
+    await transport().burn(r.id, r.ownerToken).catch(() => undefined);
     forget(r.id);
   }
-  function forget(id: string) { removeRecord(id); setRecords(loadVault()); }
+  function forget(id: string) {
+    removeRecord(id); setRecords(loadVault());
+    const s = getSession(); if (s) saveAccount(s, loadVault()).then(setSession).catch(() => undefined);
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-10">

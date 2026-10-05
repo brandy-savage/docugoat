@@ -1,7 +1,8 @@
 import type { AttestedReceipt, RelayEnvelope, RelaySignature } from "./types";
 
 /** Relay origin. Empty = same origin (dev proxy / relay serving the built app). Set VITE_RELAY_URL for static hosting such as GitHub Pages. */
-export const RELAY_URL = (import.meta.env.VITE_RELAY_URL ?? "").replace(/\/$/, "");
+import { env } from "./env";
+export const RELAY_URL = env("VITE_RELAY_URL").replace(/\/$/, "");
 
 export class RelayError extends Error {
   constructor(public status: number, message: string) { super(message); }

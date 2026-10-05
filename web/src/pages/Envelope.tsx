@@ -6,7 +6,8 @@ import { CodeEntry } from "../components/CodeEntry";
 import { DocumentView } from "../components/DocumentView";
 import { SignaturePad, type SignaturePadHandle } from "../components/SignaturePad";
 import { Pill, Spinner, Toast } from "../components/ui";
-import { RelayError, relay } from "../lib/api";
+import { RelayError } from "../lib/api";
+import { BACKEND, setLinkToken, transport } from "../lib/config";
 import { isVerified, loadAudit, loadSignatures, openEnvelope, recordView, signEnvelope, type OpenedEnvelope } from "../lib/envelope";
 import { parseFields, sameName } from "../lib/fields";
 import { downloadPdf } from "../lib/pdf";
@@ -23,7 +24,9 @@ type Phase =
 export function EnvelopePage() {
   const { id = "" } = useParams();
   const { hash } = useLocation();
-  const fragmentSecret = new URLSearchParams(hash.replace(/^#/, "")).get("k") ?? "";
+  const frag = new URLSearchParams(hash.replace(/^#/, ""));
+  const fragmentSecret = frag.get("k") ?? "";
+  setLinkToken(frag.get("t") ?? undefined);
   const [phase, setPhase] = useState<Phase>({ k: "loading" });
   const [record, setRecord] = useState<VaultRecord | undefined>(() => findRecord(id));
   const [signatures, setSignatures] = useState<VerifiedSignature[]>([]);
@@ -47,14 +50,16 @@ export function EnvelopePage() {
 
   useEffect(() => {
     let cancelled = false;
-    relay.fetch(id).then((envelope) => {
+    transport().fetch(id).then((envelope) => {
       if (cancelled) return;
       const rec = findRecord(id);
       if (rec && rec.fragmentSecret === fragmentSecret) unlock(envelope, rec.code);
       else setPhase({ k: "locked", envelope, busy: false, failed: 0 });
     }).catch((e) => {
       if (cancelled) return;
-      setPhase({ k: "gone", reason: e instanceof RelayError ? (e.status === 404 ? "not found" : e.message) : "unreachable" });
+      const status = e instanceof RelayError ? e.status : (e as any)?.status;
+      const msg = e instanceof Error ? e.message : "";
+      setPhase({ k: "gone", reason: status === 404 || msg === "not found" ? "not found" : msg === "expired" || msg === "burned" ? msg : status === 410 ? msg : "unreachable" });
     });
     return () => { cancelled = true; };
   }, [id, fragmentSecret, unlock]);
@@ -75,7 +80,7 @@ export function EnvelopePage() {
   }
   async function burn() {
     if (!record?.ownerToken || !confirm("Burn this envelope? Nobody will be able to open it again.")) return;
-    try { await relay.burn(id, record.ownerToken); removeRecord(id); setPhase({ k: "gone", reason: "burned" }); }
+    try { await transport().burn(id, record.ownerToken); removeRecord(id); setPhase({ k: "gone", reason: "burned" }); }
     catch (e) { setToast({ m: e instanceof Error ? e.message : "Burn failed", tone: "bad" }); }
   }
 
@@ -137,7 +142,7 @@ export function EnvelopePage() {
           <button className="btn-ghost btn-sm" onClick={() => refresh()}><RefreshCw size={13} /> Refresh</button>
           <button className="btn-ghost btn-sm" onClick={() => window.print()}><Printer size={13} /> Print</button>
           <button className="btn-secondary btn-sm" onClick={exportPdf} disabled={exporting}>{exporting ? <Spinner /> : <Download size={13} />} Download PDF</button>
-          {isOwner && <button className="btn-danger btn-sm" onClick={burn}><Flame size={13} /> Burn</button>}
+          {isOwner && record?.ownerToken && <button className="btn-danger btn-sm" onClick={burn}><Flame size={13} /> Burn</button>}
         </div>
       </div>
 
@@ -151,7 +156,7 @@ export function EnvelopePage() {
 
         <aside className="no-print space-y-5 lg:sticky lg:top-20 lg:self-start">
           {iCanSign && !mySignature && (
-            <SignPanel opened={opened} fieldCount={myFields.length} onSigned={async (name) => {
+            <SignPanel opened={opened} fieldCount={myFields.length} canWrite={BACKEND !== "github" || !!frag.get("t") || !!record} onSigned={async (name) => {
               if (!isOwner) {
                 const rec: VaultRecord = { id, title: opened.doc.title, fragmentSecret, createdAt: new Date().toISOString(), expiresAt: opened.envelope.expiresAt, role: "signer", code, slot: opened.slot, signerName: name };
                 saveRecord(rec); setRecord(rec);
@@ -202,7 +207,7 @@ export function EnvelopePage() {
   );
 }
 
-function SignPanel({ opened, fieldCount, onSigned, onError }: { opened: OpenedEnvelope; fieldCount: number; onSigned: (name: string) => Promise<void>; onError: (m: string) => void }) {
+function SignPanel({ opened, fieldCount, canWrite, onSigned, onError }: { opened: OpenedEnvelope; fieldCount: number; canWrite: boolean; onSigned: (name: string) => Promise<void>; onError: (m: string) => void }) {
   const pad = useRef<SignaturePadHandle>(null);
   const locked = opened.me.name !== "";
   const [name, setName] = useState(opened.me.name);
@@ -239,7 +244,8 @@ function SignPanel({ opened, fieldCount, onSigned, onError }: { opened: OpenedEn
         <input type="checkbox" className="mt-1 accent-goat-500" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
         I have read this document and intend this to be my legally binding electronic signature.
       </label>
-      <button className="btn-primary w-full" disabled={busy || !agree || !name.trim() || !drawn} onClick={sign}>
+      {!canWrite && <p className="text-xs text-goat-400">This link has no write access to the store — ask the sender for the full link.</p>}
+      <button className="btn-primary w-full" disabled={busy || !agree || !name.trim() || !drawn || !canWrite} onClick={sign}>
         {busy ? <><Spinner /> Signing &amp; encrypting…</> : "Sign document"}
       </button>
       <p className="text-[11px] leading-5 text-bone-500">Your mark is placed into every highlighted field. The relay stamps a signed receipt (time, IP, browser) that's sealed into your encrypted bundle — evidence for the certificate, never stored in the clear.</p>

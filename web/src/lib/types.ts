@@ -54,6 +54,9 @@ export interface AuditEvent {
   userAgent?: string;
   attested: boolean | null;   // null = no receipt / can't verify on this browser
   relayId?: string;
+  /** GitHub backend: the time GitHub recorded the commit, and its short sha. */
+  recordedAt?: string;
+  ref?: string;
 }
 
 export interface KeyWrap { slot: number; iv: string; ciphertext: string }

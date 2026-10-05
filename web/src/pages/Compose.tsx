@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CalendarDays, Eye, FileSignature, Lock, PenLine, Plus, ShieldAlert, Type, X } from "lucide-react";
 import { DocumentView } from "../components/DocumentView";
 import { Editor } from "../components/Editor";
@@ -8,7 +8,9 @@ import { sealDocument } from "../lib/envelope";
 import { FIELD_RE, fieldToken, parseFields, sameName } from "../lib/fields";
 import { titleFromMarkdown } from "../lib/markdown";
 import { TEMPLATES } from "../lib/templates";
-import { clearDraft, loadDraft, saveDraft } from "../lib/vault";
+import { clearDraft, loadDraft, loadVault, saveDraft } from "../lib/vault";
+import { BACKEND, getSession, setSession } from "../lib/config";
+import { saveAccount } from "../lib/account";
 
 export function Compose() {
   const nav = useNavigate();
@@ -56,7 +58,10 @@ export function Compose() {
     setMarkdown(markdown.replace(FIELD_RE, (m, kind: string, name: string) => (sameName(name, from) ? fieldToken(kind.toLowerCase() as "sign", next) : m)));
   }
 
+  const needsAccount = BACKEND === "github" && !getSession();
+
   async function seal() {
+    if (needsAccount) return setToast({ m: "Sign in first — sealing writes to the GitHub store.", tone: "bad" });
     if (!markdown.trim()) return setToast({ m: "Write something first.", tone: "bad" });
     if (!author.trim()) return setToast({ m: "Add your name — it's sealed into the document as the sender.", tone: "bad" });
     setBusy(true);
@@ -64,6 +69,8 @@ export function Compose() {
       localStorage.setItem("docugoat.author", author.trim());
       const res = await sealDocument({ title, markdown, author: author.trim(), authorSigns, signerNames: signers.filter((s) => !sameName(s, author)), ttlDays: ttl });
       clearDraft();
+      const session = getSession();
+      if (session) setSession(await saveAccount(session, loadVault()).catch(() => session));
       nav(`/share/${res.id}`, { state: res });
     } catch (e) {
       setToast({ m: e instanceof Error ? e.message : "Sealing failed", tone: "bad" });
@@ -73,6 +80,12 @@ export function Compose() {
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-8">
+      {needsAccount && (
+        <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-goat-500/30 bg-goat-500/10 px-5 py-3 text-sm">
+          <span>Drafting is local. To seal and issue codes you need your vault unlocked — it holds the GitHub write token.</span>
+          <Link to="/account" className="btn-primary btn-sm shrink-0">Sign in</Link>
+        </div>
+      )}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <p className="eyebrow">New envelope</p>

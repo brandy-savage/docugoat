@@ -12,6 +12,7 @@ import { EnvelopePage } from "./pages/Envelope";
 import { Vault } from "./pages/Vault";
 import { Security } from "./pages/Security";
 import { InsecureContext } from "./components/InsecureContext";
+import { Account } from "./pages/Account";
 
 const router = createBrowserRouter([
   {
@@ -23,6 +24,7 @@ const router = createBrowserRouter([
       { path: "/d/:id", element: <EnvelopePage /> },
       { path: "/vault", element: <Vault /> },
       { path: "/security", element: <Security /> },
+      { path: "/account", element: <Account /> },
     ],
   },
 ], { basename: import.meta.env.BASE_URL.replace(/\/$/, "") || "/" });
