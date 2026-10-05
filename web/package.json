@@ -1,0 +1,43 @@
+{
+  "name": "docugoat-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "preview": "vite preview",
+    "test:e2e": "tsx scripts/e2e-relay.mts",
+    "test:editor": "tsx scripts/editor-roundtrip.mts",
+    "test:pdf": "tsx scripts/pdf-smoke.mts /tmp/docugoat-smoke.pdf",
+    "test": "npm run test:editor && npm run test:pdf && npm run test:e2e"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5.1.0",
+    "@fontsource-variable/jetbrains-mono": "^5.1.1",
+    "@tiptap/extension-link": "^2.10.4",
+    "@tiptap/extension-placeholder": "^2.10.4",
+    "@tiptap/react": "^2.10.4",
+    "@tiptap/starter-kit": "^2.10.4",
+    "@types/pdfmake": "^0.3.3",
+    "dompurify": "^3.2.3",
+    "lucide-react": "^0.468.0",
+    "marked": "^15.0.4",
+    "pdfmake": "^0.3.11",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.1",
+    "signature_pad": "^5.0.4",
+    "tiptap-markdown": "^0.8.10"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/dompurify": "^3.0.5",
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
+  }
+}

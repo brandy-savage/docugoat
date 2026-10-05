@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-ink-950: #08090b;
+  --color-ink-900: #0c0d10;
+  --color-ink-800: #14161b;
+  --color-ink-700: #1b1e25;
+  --color-ink-600: #262a33;
+  --color-ink-500: #363b47;
+  --color-bone-100: #f4f3ee;
+  --color-bone-200: #e6e4dc;
+  --color-bone-400: #b9b8b0;
+  --color-bone-500: #8f9098;
+  --color-goat-300: #ffd866;
+  --color-goat-400: #ffc933;
+  --color-goat-500: #f5b400;
+  --color-goat-600: #c99300;
+  --color-moss-400: #3ecf8e;
+  --color-moss-500: #22b877;
+  --color-blood-400: #ff6b6b;
+  --color-blood-500: #e94f4f;
+
+  --shadow-glow: 0 0 0 1px rgb(245 180 0 / 0.35), 0 12px 40px -12px rgb(245 180 0 / 0.45);
+  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 20px 50px -30px rgb(0 0 0 / 0.8);
+  --radius-xl2: 1.25rem;
+}
+
+:root { color-scheme: dark; }
+html, body, #root { height: 100%; }
+body {
+  @apply bg-ink-900 text-bone-100 font-sans antialiased;
+  background-image:
+    radial-gradient(1200px 600px at 20% -10%, rgb(245 180 0 / 0.07), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgb(62 207 142 / 0.05), transparent 60%);
+  background-attachment: fixed;
+}
+::selection { background: rgb(245 180 0 / 0.35); }
+
+@utility hairline { border-color: rgb(255 255 255 / 0.08); }
+.surface { @apply bg-ink-800 border hairline rounded-2xl; box-shadow: var(--shadow-card); }
+.surface-raised { @apply bg-ink-700 border hairline rounded-2xl; box-shadow: var(--shadow-card); }
+@utility mono { font-family: var(--font-mono); font-variant-ligatures: none; }
+.eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-bone-500; }
+
+@utility btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 select-none disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-goat-400/60; }
+.btn-primary { @apply btn bg-goat-500 text-ink-950 hover:bg-goat-400 active:translate-y-px; }
+.btn-primary:not(:disabled):hover { box-shadow: var(--shadow-glow); }
+.btn-secondary { @apply btn bg-ink-600 text-bone-100 border hairline hover:bg-ink-500; }
+.btn-ghost { @apply btn text-bone-400 hover:text-bone-100 hover:bg-ink-700; }
+.btn-danger { @apply btn bg-blood-500/15 text-blood-400 border border-blood-500/30 hover:bg-blood-500/25; }
+.btn-sm { @apply px-3 py-1.5 text-xs rounded-lg; }
+
+.input { @apply w-full rounded-xl bg-ink-900 border hairline px-3.5 py-2.5 text-sm text-bone-100 placeholder:text-bone-500 transition focus:outline-none focus:border-goat-500/60 focus:ring-2 focus:ring-goat-500/20; }
+.label { @apply block text-xs font-medium text-bone-400 mb-1.5; }
+
+.kbd { @apply mono inline-block rounded-md border hairline bg-ink-900 px-1.5 py-0.5 text-[11px] text-bone-400; }
+
+/* ---- Editor ---- */
+.tiptap { @apply outline-none min-h-[420px] px-8 py-6; }
+.tiptap p.is-editor-empty:first-child::before { content: attr(data-placeholder); @apply text-bone-500 float-left h-0 pointer-events-none; }
+.prose-doc { @apply text-[15.5px] leading-7 text-bone-200; }
+.prose-doc h1 { @apply text-3xl font-bold tracking-tight text-bone-100 mt-2 mb-4; }
+.prose-doc h2 { @apply text-xl font-semibold tracking-tight text-bone-100 mt-8 mb-3; }
+.prose-doc h3 { @apply text-base font-semibold text-bone-100 mt-6 mb-2; }
+.prose-doc p { @apply my-3; }
+.prose-doc ul { @apply list-disc pl-6 my-3; }
+.prose-doc ol { @apply list-decimal pl-6 my-3; }
+.prose-doc li { @apply my-1; }
+.prose-doc blockquote { @apply border-l-2 border-goat-500/60 pl-4 my-4 text-bone-400 italic; }
+.prose-doc code { @apply mono text-[13px] bg-ink-900 border hairline rounded px-1.5 py-0.5; }
+.prose-doc pre { @apply bg-ink-900 border hairline rounded-xl p-4 my-4 overflow-x-auto; }
+.prose-doc pre code { @apply bg-transparent border-0 p-0; }
+.prose-doc hr { @apply border-0 border-t hairline my-8; }
+.prose-doc a { @apply text-goat-400 underline underline-offset-4 decoration-goat-500/40 hover:decoration-goat-400; }
+.prose-doc strong { @apply text-bone-100 font-semibold; }
+.prose-doc table { @apply w-full text-sm my-4 border-collapse; }
+.prose-doc th, .prose-doc td { @apply border hairline px-3 py-2 text-left align-top; }
+.prose-doc th { @apply bg-ink-700 font-semibold; }
+
+/* ---- Code entry ---- */
+.code-cell { @apply mono w-10 h-14 sm:w-12 sm:h-16 text-center text-2xl font-semibold rounded-xl bg-ink-900 border hairline text-bone-100 focus:outline-none focus:border-goat-500 focus:ring-2 focus:ring-goat-500/25 transition uppercase; caret-color: #f5b400; }
+
+.fade-in { animation: fadeIn .35s ease-out both; }
+.rise-in { animation: riseIn .45s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes riseIn { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
+.shake { animation: shake .4s ease; }
+@keyframes shake { 20%,60% { transform: translateX(-6px) } 40%,80% { transform: translateX(6px) } }
+
+/* ---- Print: the PDF is produced on-device from this stylesheet ---- */
+@media print {
+  :root { color-scheme: light; }
+  body { background: #fff !important; color: #111 !important; }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  .print-page { break-before: page; }
+  .prose-doc, .prose-doc * { color: #111 !important; background: transparent !important; border-color: #ccc !important; }
+  .prose-doc h1 { font-size: 24pt; } .prose-doc h2 { font-size: 16pt; } .prose-doc { font-size: 11pt; line-height: 1.55; }
+  .prose-doc a { color: #111 !important; text-decoration: none; }
+  .cert { color: #111 !important; }
+  .cert * { color: #111 !important; border-color: #bbb !important; background: transparent !important; }
+  @page { size: A4; margin: 18mm 16mm; }
+}
+.print-only { display: none; }
+
+/* ---- Signature fields ---- */
+.sig-field { display: inline-flex; flex-direction: column; justify-content: flex-end; min-width: 240px; min-height: 76px; margin: 6px 0; padding: 8px 12px; border: 1.5px dashed rgb(255 255 255 / 0.22); border-radius: 10px; background: rgb(255 255 255 / 0.02); vertical-align: bottom; }
+.sig-field.inline { min-width: 150px; min-height: 52px; }
+.sig-field .sig-label { font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #8f9098; }
+.sig-field .sig-name { font-size: 13px; color: #b9b8b0; }
+.sig-field.mine { border-color: #f5b400; background: rgb(245 180 0 / 0.07); box-shadow: 0 0 0 4px rgb(245 180 0 / 0.08); animation: pulse 2.2s ease-in-out infinite; }
+.sig-field.mine .sig-label { color: #f5b400; }
+.sig-field.signed { border-style: solid; border-color: rgb(62 207 142 / 0.45); background: rgb(62 207 142 / 0.05); }
+.sig-field.signed img { height: 44px; max-width: 200px; object-fit: contain; background: #fff; border-radius: 6px; padding: 2px 6px; align-self: flex-start; }
+.sig-field .sig-meta { margin-top: 4px; font-size: 11px; color: #8f9098; }
+.sig-field .sig-value { font-size: 15px; color: #f4f3ee; }
+.sig-field .sig-initials { font-family: var(--font-mono); letter-spacing: 0.1em; }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 4px rgb(245 180 0 / 0.08) } 50% { box-shadow: 0 0 0 8px rgb(245 180 0 / 0.14) } }
+@media print {
+  .sig-field { border-color: #bbb !important; background: transparent !important; animation: none; box-shadow: none; }
+  .sig-field .sig-label, .sig-field .sig-name, .sig-field .sig-meta { color: #555 !important; }
+}
+
+/* ---- Field chips inside the visual editor ---- */
+.field-chip { display: inline-flex; align-items: baseline; gap: 6px; margin: 0 2px; padding: 3px 10px 3px 8px; border: 1.5px dashed rgb(245 180 0 / 0.55); border-radius: 8px; background: rgb(245 180 0 / 0.08); font-size: 12.5px; line-height: 1.4; vertical-align: baseline; cursor: default; user-select: none; }
+.field-chip-sign { padding: 10px 14px 8px 12px; min-width: 200px; border-radius: 10px; }
+.field-chip-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #f5b400; }
+.field-chip-name { color: #e6e4dc; font-weight: 500; }
+.ProseMirror-selectednode.field-chip { outline: 2px solid #f5b400; outline-offset: 1px; }
