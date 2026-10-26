@@ -25,16 +25,16 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Test (editor round-trip + PDF)
-        run: npm run test:editor --workspace web && npm run test:pdf --workspace web
+        run: npm run test:editor --workspace apps/docugoat && npm run test:pdf --workspace apps/docugoat
       - name: Build
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
           VITE_RELAY_URL: ${{ vars.RELAY_URL }}
-        run: npm run build --workspace web && cp web/dist/index.html web/dist/404.html
+        run: npm run build --workspace apps/docugoat && cp apps/docugoat/dist/index.html apps/docugoat/dist/404.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: web/dist
+          path: apps/docugoat/dist
 
   deploy:
     needs: build

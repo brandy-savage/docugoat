@@ -8,13 +8,15 @@ OWNER=$(gh repo view --json owner -q .owner.login 2>/dev/null || git remote get-
 BACKEND=${BACKEND:-github}
 DATA_REPO=${DATA_REPO:-docugoat-data}
 echo "building with VITE_BASE=/$REPO/ VITE_BACKEND=$BACKEND VITE_GH_OWNER=$OWNER VITE_GH_DATA_REPO=$DATA_REPO VITE_RELAY_URL=${RELAY_URL:-<unset>}"
-VITE_BASE="/$REPO/" VITE_BACKEND="$BACKEND" VITE_GH_OWNER="$OWNER" VITE_GH_DATA_REPO="$DATA_REPO" VITE_RELAY_URL="${RELAY_URL:-}" npm run build --workspace web
-cp web/dist/index.html web/dist/404.html
-touch web/dist/.nojekyll
+VITE_BASE="/$REPO/" VITE_BACKEND="$BACKEND" VITE_GH_OWNER="$OWNER" VITE_GH_DATA_REPO="$DATA_REPO" VITE_RELAY_URL="${RELAY_URL:-}" npm run build --workspace apps/docugoat
+cp apps/docugoat/dist/index.html apps/docugoat/dist/404.html
+touch apps/docugoat/dist/.nojekyll
+npm run build --workspace apps/reviewer
+rm -rf apps/docugoat/dist/review && cp -r apps/reviewer/dist apps/docugoat/dist/review
 WT=$(mktemp -d)
 git worktree add --detach "$WT" >/dev/null
 TMPBRANCH="gh-pages-build-$$"
-( cd "$WT" && git checkout --orphan "$TMPBRANCH" && git rm -rfq . && cp -r "$OLDPWD/web/dist/." . && git add -A \
+( cd "$WT" && git checkout --orphan "$TMPBRANCH" && git rm -rfq . && cp -r "$OLDPWD/apps/docugoat/dist/." . && git add -A \
   && git -c user.name="docugoat deploy" -c user.email="deploy@docugoat.local" commit -qm "Deploy $(git -C "$OLDPWD" rev-parse --short HEAD) to GitHub Pages" \
   && git push -f "$REMOTE" "$TMPBRANCH:gh-pages" )
 git worktree remove --force "$WT"

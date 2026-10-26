@@ -2,14 +2,16 @@
   "name": "docugoat",
   "private": true,
   "workspaces": [
-    "server",
-    "web"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -n relay,web -c cyan,magenta \"npm run dev --workspace server\" \"npm run dev --workspace web\"",
-    "build": "npm run build --workspace web",
-    "start": "npm run start --workspace server",
-    "typecheck": "npm run typecheck --workspace server && npm run typecheck --workspace web",
+    "dev": "concurrently -n relay,web -c cyan,magenta \"npm run dev --workspace apps/relay\" \"npm run dev --workspace apps/docugoat\"",
+    "dev:reviewer": "npm run dev --workspace apps/reviewer",
+    "build": "npm run build --workspace apps/docugoat && npm run build --workspace apps/reviewer",
+    "start": "npm run start --workspace apps/relay",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspace apps/reviewer && npm test --workspace apps/docugoat",
     "deploy:pages": "bash deploy/pages.sh"
   },
   "devDependencies": {

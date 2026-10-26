@@ -1,0 +1,21 @@
+{
+  "name": "@docugoat/review",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Document \u21c4 rules bridge and draft comparison",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@docugoat/docx": "0.1.0",
+    "@docugoat/rules": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

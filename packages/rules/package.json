@@ -1,0 +1,21 @@
+{
+  "name": "@docugoat/rules",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Contract rules engine: JSON playbooks, findings with offsets, approved-language templates",
+  "exports": {
+    "./*": "./src/*.ts",
+    "./sample-pack.json": "./src/sample-pack.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@docugoat/util": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

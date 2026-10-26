@@ -1,0 +1,1805 @@
+{
+  "format": "contract-reviewer.rulepack",
+  "formatVersion": 1,
+  "id": "sample-commercial",
+  "name": "Sample commercial playbook",
+  "version": "0.1.0",
+  "description": "Illustrative rules for MSA, SOW and NDA review from a service provider's perspective. The clause language is sample text, not company-approved language: replace it with your approved clause library before relying on it.",
+  "rules": [
+    {
+      "id": "RESTRICT-NONCOMPETE-001",
+      "version": 1,
+      "name": "Restrictions on competing services",
+      "category": "Restrictive covenants",
+      "enabled": true,
+      "severity": "high",
+      "appliesTo": {
+        "documentTypes": [
+          "msa",
+          "sow",
+          "nda"
+        ],
+        "reviewPerspective": [
+          "service_provider"
+        ]
+      },
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "all": [
+          {
+            "any": [
+              {
+                "phrase": "shall not"
+              },
+              {
+                "phrase": "may not"
+              },
+              {
+                "phrase": "will not"
+              },
+              {
+                "phrase": "agrees not to"
+              },
+              {
+                "phrase": "is prohibited from"
+              },
+              {
+                "phrase": "refrain from"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "phrase": "provid* services"
+              },
+              {
+                "phrase": "perform* services"
+              },
+              {
+                "phrase": "engage in"
+              },
+              {
+                "phrase": "enter* into"
+              },
+              {
+                "phrase": "accept* engagement*"
+              },
+              {
+                "phrase": "work for"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "phrase": "competitor*"
+              },
+              {
+                "phrase": "competing"
+              },
+              {
+                "phrase": "competitive"
+              },
+              {
+                "phrase": "similar services"
+              }
+            ]
+          }
+        ],
+        "exclude": {
+          "scope": "matched_sentence",
+          "any": [
+            {
+              "phrase": "nothing herein shall restrict"
+            },
+            {
+              "phrase": "nothing in this agreement prohibits"
+            },
+            {
+              "phrase": "nothing in this agreement shall prevent"
+            }
+          ]
+        }
+      },
+      "review": {
+        "title": "Potential non-compete",
+        "message": "The agreement may stop the company from serving other customers or competitors of the counterparty.",
+        "recommendedAction": "review_and_redline",
+        "templateIds": [
+          "NONCOMPETE-DELETE",
+          "NONCOMPETE-FALLBACK"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "During the Term, Provider shall not provide services to any competitor of Customer.",
+          "Vendor agrees not to perform services for any competing business.",
+          "Supplier is prohibited from entering into similar services agreements with competitors."
+        ],
+        "shouldNotMatch": [
+          "Nothing herein shall restrict Provider from providing services to competitors, and Provider shall not use Confidential Information to do so.",
+          "Provider shall not disclose Confidential Information to third parties."
+        ]
+      }
+    },
+    {
+      "id": "RESTRICT-NONCOMPETE-002",
+      "version": 1,
+      "name": "Express non-compete covenant",
+      "category": "Restrictive covenants",
+      "enabled": true,
+      "severity": "high",
+      "appliesTo": {
+        "reviewPerspective": [
+          "service_provider"
+        ]
+      },
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "any": [
+          {
+            "phrase": "non-compet*"
+          },
+          {
+            "phrase": "covenant not to compete"
+          },
+          {
+            "phrase": "shall not compete"
+          }
+        ]
+      },
+      "review": {
+        "title": "Non-compete covenant",
+        "message": "The agreement contains an express non-compete covenant.",
+        "templateIds": [
+          "NONCOMPETE-DELETE",
+          "NONCOMPETE-FALLBACK"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "The non-compete obligations in this Section survive termination.",
+          "This noncompetition covenant applies worldwide.",
+          "Consultant shall not compete with the Company."
+        ],
+        "shouldNotMatch": [
+          "Provider operates in a competitive market."
+        ]
+      }
+    },
+    {
+      "id": "RESTRICT-EXCLUSIVITY-001",
+      "version": 1,
+      "name": "Exclusivity obligations",
+      "category": "Restrictive covenants",
+      "enabled": true,
+      "severity": "high",
+      "appliesTo": {
+        "reviewPerspective": [
+          "service_provider"
+        ]
+      },
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "any": [
+          {
+            "phrase": "exclusive provider"
+          },
+          {
+            "phrase": "sole provider"
+          },
+          {
+            "phrase": "exclusive supplier"
+          },
+          {
+            "phrase": "on an exclusive basis"
+          },
+          {
+            "phrase": "exclusively for"
+          },
+          {
+            "phrase": "sole and exclusive"
+          }
+        ],
+        "exclude": {
+          "scope": "matched_sentence",
+          "any": [
+            {
+              "phrase": "remedy"
+            },
+            {
+              "phrase": "remedies"
+            },
+            {
+              "phrase": "jurisdiction"
+            },
+            {
+              "phrase": "property"
+            }
+          ]
+        }
+      },
+      "review": {
+        "title": "Exclusivity obligation",
+        "message": "The company may be required to work exclusively for the counterparty.",
+        "templateIds": [
+          "NONCOMPETE-DELETE"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider shall act as Customer's exclusive provider of these services.",
+          "Provider shall work exclusively for Customer during the Term."
+        ],
+        "shouldNotMatch": [
+          "This is Customer's sole and exclusive remedy for breach of warranty."
+        ]
+      }
+    },
+    {
+      "id": "RESTRICT-NONSOLICIT-001",
+      "version": 1,
+      "name": "Non-solicitation and no-hire",
+      "category": "Restrictive covenants",
+      "enabled": true,
+      "severity": "medium",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "all": [
+          {
+            "any": [
+              {
+                "phrase": "shall not"
+              },
+              {
+                "phrase": "agrees not to"
+              },
+              {
+                "phrase": "will not"
+              },
+              {
+                "phrase": "may not"
+              }
+            ]
+          },
+          {
+            "near": [
+              {
+                "any": [
+                  {
+                    "phrase": "solicit*"
+                  },
+                  {
+                    "phrase": "hire"
+                  },
+                  {
+                    "phrase": "employ"
+                  },
+                  {
+                    "phrase": "recruit*"
+                  }
+                ]
+              },
+              {
+                "any": [
+                  {
+                    "phrase": "employee*"
+                  },
+                  {
+                    "phrase": "personnel"
+                  },
+                  {
+                    "phrase": "contractor*"
+                  },
+                  {
+                    "phrase": "staff"
+                  }
+                ]
+              }
+            ],
+            "within": 8
+          }
+        ],
+        "exclude": {
+          "scope": "matched_sentence",
+          "any": [
+            {
+              "phrase": "general solicitation"
+            },
+            {
+              "phrase": "general advertisement"
+            },
+            {
+              "phrase": "mutual"
+            }
+          ]
+        }
+      },
+      "review": {
+        "title": "Non-solicitation / no-hire",
+        "message": "Restricts hiring or soliciting personnel. Check that it is mutual, time-limited, and carves out general job advertisements.",
+        "templateIds": [
+          "NONSOLICIT-MUTUAL"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider shall not solicit or hire any employee of Customer for two years."
+        ],
+        "shouldNotMatch": [
+          "Provider shall not be restricted from general solicitation of employees through advertisements.",
+          "Customer employees may contact Provider."
+        ]
+      }
+    },
+    {
+      "id": "IP-PREEXISTING-001",
+      "version": 1,
+      "name": "Transfer of pre-existing IP",
+      "category": "Intellectual property",
+      "enabled": true,
+      "severity": "high",
+      "appliesTo": {
+        "reviewPerspective": [
+          "service_provider"
+        ]
+      },
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "all": [
+          {
+            "any": [
+              {
+                "phrase": "pre-existing"
+              },
+              {
+                "phrase": "background intellectual property"
+              },
+              {
+                "phrase": "background ip"
+              },
+              {
+                "phrase": "tools and methodologies"
+              },
+              {
+                "phrase": "know-how"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "phrase": "exclusive property of"
+              },
+              {
+                "phrase": "owned by customer"
+              },
+              {
+                "phrase": "vest in"
+              },
+              {
+                "phrase": "hereby assign*"
+              },
+              {
+                "phrase": "shall own"
+              },
+              {
+                "phrase": "work made for hire"
+              }
+            ]
+          }
+        ],
+        "exclude": {
+          "scope": "matched_sentence",
+          "any": [
+            {
+              "phrase": "excluding"
+            },
+            {
+              "phrase": "except for"
+            },
+            {
+              "phrase": "other than"
+            },
+            {
+              "phrase": "retains"
+            },
+            {
+              "phrase": "does not include"
+            }
+          ]
+        }
+      },
+      "review": {
+        "title": "Pre-existing IP transferred",
+        "message": "Ownership of work product appears to include the company's pre-existing tools, methods or know-how.",
+        "templateIds": [
+          "IP-OWNERSHIP-PREFERRED",
+          "IP-OWNERSHIP-FALLBACK"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "All work product, including Provider's pre-existing tools and methodologies, shall be the exclusive property of Customer."
+        ],
+        "shouldNotMatch": [
+          "Customer shall own the deliverables, excluding Provider's pre-existing tools and methodologies.",
+          "Provider retains its pre-existing IP."
+        ]
+      }
+    },
+    {
+      "id": "IP-ASSIGNMENT-002",
+      "version": 1,
+      "name": "Broad assignment of work product",
+      "category": "Intellectual property",
+      "enabled": true,
+      "severity": "medium",
+      "appliesTo": {
+        "reviewPerspective": [
+          "service_provider"
+        ]
+      },
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "all": [
+          {
+            "any": [
+              {
+                "phrase": "all work product"
+              },
+              {
+                "phrase": "all deliverables"
+              },
+              {
+                "phrase": "all inventions"
+              },
+              {
+                "phrase": "all improvements"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "phrase": "exclusive property"
+              },
+              {
+                "phrase": "hereby assign*"
+              },
+              {
+                "phrase": "vest in"
+              },
+              {
+                "phrase": "work made for hire"
+              },
+              {
+                "phrase": "work for hire"
+              }
+            ]
+          }
+        ],
+        "exclude": {
+          "scope": "matched_sentence",
+          "any": [
+            {
+              "phrase": "pre-existing"
+            },
+            {
+              "phrase": "background"
+            },
+            {
+              "phrase": "excluding"
+            }
+          ]
+        }
+      },
+      "review": {
+        "title": "Broad work-product assignment",
+        "message": "All work product is assigned without carving out the company's pre-existing materials or general know-how.",
+        "templateIds": [
+          "IP-OWNERSHIP-PREFERRED",
+          "IP-OWNERSHIP-FALLBACK"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider hereby assigns all work product to Customer."
+        ],
+        "shouldNotMatch": [
+          "Provider hereby assigns all work product to Customer, excluding pre-existing materials."
+        ]
+      }
+    },
+    {
+      "id": "INDEMNITY-BROAD-001",
+      "version": 1,
+      "name": "Broad indemnification",
+      "category": "Indemnification",
+      "enabled": true,
+      "severity": "high",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "all": [
+          {
+            "any": [
+              {
+                "phrase": "indemnif*"
+              },
+              {
+                "phrase": "hold harmless"
+              },
+              {
+                "phrase": "defend"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "phrase": "any and all"
+              },
+              {
+                "phrase": "all claims"
+              },
+              {
+                "phrase": "arising out of or relating to"
+              },
+              {
+                "phrase": "arising out of or related to"
+              },
+              {
+                "phrase": "arising from or related to"
+              },
+              {
+                "phrase": "regardless of"
+              }
+            ]
+          }
+        ],
+        "exclude": {
+          "scope": "matched_sentence",
+          "any": [
+            {
+              "phrase": "to the extent caused by"
+            },
+            {
+              "phrase": "to the extent arising from"
+            },
+            {
+              "phrase": "to the extent resulting from"
+            }
+          ]
+        }
+      },
+      "review": {
+        "title": "Broad indemnity",
+        "message": "Indemnity covers any and all claims rather than claims caused by the company's own breach or negligence.",
+        "templateIds": [
+          "INDEMNITY-FAULT-BASED"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider shall indemnify Customer against any and all claims arising out of or relating to this Agreement."
+        ],
+        "shouldNotMatch": [
+          "Provider shall indemnify Customer against third-party claims to the extent caused by Provider's gross negligence, including any and all costs."
+        ]
+      }
+    },
+    {
+      "id": "LIABILITY-UNCAPPED-001",
+      "version": 1,
+      "name": "Uncapped liability",
+      "category": "Liability",
+      "enabled": true,
+      "severity": "high",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "any": [
+          {
+            "phrase": "unlimited liability"
+          },
+          {
+            "phrase": "uncapped"
+          },
+          {
+            "phrase": "shall not be limited"
+          },
+          {
+            "phrase": "no limitation on liability"
+          },
+          {
+            "phrase": "notwithstanding any limitation of liability"
+          }
+        ]
+      },
+      "review": {
+        "title": "Uncapped liability",
+        "message": "Language may remove or override the limitation of liability.",
+        "templateIds": [
+          "LIABILITY-CAP-INSERT"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider's liability for breach of Section 9 shall not be limited.",
+          "Notwithstanding any limitation of liability, Provider is liable for all losses."
+        ],
+        "shouldNotMatch": [
+          "Each party's liability is limited to fees paid."
+        ]
+      }
+    },
+    {
+      "id": "LIABILITY-MISSING-001",
+      "version": 1,
+      "name": "Limitation of liability",
+      "category": "Liability",
+      "enabled": true,
+      "severity": "high",
+      "appliesTo": {
+        "documentTypes": [
+          "msa",
+          "sow"
+        ]
+      },
+      "type": "absence",
+      "match": {
+        "any": [
+          {
+            "phrase": "limitation of liability"
+          },
+          {
+            "phrase": "limitation on liability"
+          },
+          {
+            "phrase": "aggregate liability"
+          },
+          {
+            "phrase": "total liability"
+          },
+          {
+            "regex": "liability[^.]{0,80}shall not exceed"
+          },
+          {
+            "regex": "in no event shall[^.]{0,80}be liable"
+          }
+        ]
+      },
+      "partial": {
+        "any": [
+          {
+            "phrase": "liability"
+          },
+          {
+            "phrase": "liable"
+          }
+        ]
+      },
+      "review": {
+        "title": "No limitation of liability",
+        "message": "No limitation of liability was located. Check whether a governing agreement covers it; otherwise insert the standard cap.",
+        "templateIds": [
+          "LIABILITY-CAP-INSERT"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider shall perform the services.",
+          "Provider is liable for its own negligence."
+        ],
+        "shouldNotMatch": [
+          "In no event shall either party be liable for indirect damages.",
+          "Each party's aggregate liability is capped at fees paid."
+        ]
+      }
+    },
+    {
+      "id": "PAYMENT-TERMS-001",
+      "version": 2,
+      "name": "Long payment terms",
+      "category": "Payment",
+      "enabled": true,
+      "severity": "medium",
+      "type": "threshold",
+      "match": {
+        "scope": "sentence",
+        "near": [
+          {
+            "any": [
+              {
+                "phrase": "pay"
+              },
+              {
+                "phrase": "payment"
+              },
+              {
+                "phrase": "payable"
+              },
+              {
+                "phrase": "paid"
+              },
+              {
+                "phrase": "invoice*"
+              },
+              {
+                "phrase": "due"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "phrase": "within"
+              },
+              {
+                "phrase": "net"
+              },
+              {
+                "phrase": "no later than"
+              }
+            ]
+          }
+        ],
+        "within": 6,
+        "exclude": {
+          "scope": "matched_sentence",
+          "any": [
+            {
+              "phrase": "liability"
+            },
+            {
+              "phrase": "liable"
+            }
+          ]
+        }
+      },
+      "threshold": {
+        "extract": "duration_days",
+        "op": ">",
+        "value": 60
+      },
+      "review": {
+        "title": "Long payment terms",
+        "message": "Payment is due {{value}} days after invoicing. The playbook standard is 30 days, with 60 as the limit.",
+        "templateIds": [
+          "PAYMENT-NET30"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Customer shall pay undisputed invoices within ninety (90) days of receipt.",
+          "Invoices are payable within three months.",
+          "Payment is due net 75 days from the invoice date."
+        ],
+        "shouldNotMatch": [
+          "Customer shall pay invoices within thirty (30) days.",
+          "Customer shall pay within 45 days of receipt.",
+          "Neither party's aggregate liability shall exceed the fees paid or payable during the twelve (12) months preceding the claim."
+        ]
+      }
+    },
+    {
+      "id": "PAYMENT-PAYIFPAID-001",
+      "version": 2,
+      "name": "Pay-if-paid / pay-when-paid",
+      "category": "Payment",
+      "enabled": true,
+      "severity": "high",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "any": [
+          {
+            "phrase": "pay-if-paid"
+          },
+          {
+            "phrase": "pay when paid"
+          },
+          {
+            "phrase": "pay-when-paid"
+          },
+          {
+            "regex": "(contingent|conditioned|conditional) (up)?on [^.]{0,40}receipt of payment"
+          },
+          {
+            "phrase": "receipt of payment from its"
+          }
+        ],
+        "exclude": {
+          "scope": "matched_sentence",
+          "any": [
+            {
+              "phrase": "not contingent"
+            },
+            {
+              "phrase": "not conditioned"
+            },
+            {
+              "phrase": "not conditional"
+            },
+            {
+              "phrase": "regardless of whether"
+            }
+          ]
+        }
+      },
+      "review": {
+        "title": "Pay-if-paid",
+        "message": "Payment depends on the counterparty being paid by its own customer, which shifts their credit risk to the company.",
+        "templateIds": [
+          "PAYMENT-NET30"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Payment shall be contingent on Customer's receipt of payment from its end client."
+        ],
+        "shouldNotMatch": [
+          "Customer shall pay within thirty days of receipt of a valid invoice.",
+          "Customer shall pay within thirty (30) days, and payment is not contingent on Customer's receipt of payment from any third party."
+        ]
+      }
+    },
+    {
+      "id": "PAYMENT-OFFSET-001",
+      "version": 1,
+      "name": "Set-off and withholding",
+      "category": "Payment",
+      "enabled": true,
+      "severity": "medium",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "any": [
+          {
+            "phrase": "set-off"
+          },
+          {
+            "phrase": "set off"
+          },
+          {
+            "phrase": "offset against"
+          },
+          {
+            "phrase": "withhold payment"
+          },
+          {
+            "phrase": "withhold any payment"
+          }
+        ]
+      },
+      "review": {
+        "title": "Set-off / withholding",
+        "message": "The counterparty may reduce or withhold payments unilaterally."
+      },
+      "tests": {
+        "shouldMatch": [
+          "Customer may set off any amounts owed by Provider against invoices.",
+          "Customer may withhold payment pending acceptance."
+        ],
+        "shouldNotMatch": [
+          "Customer shall pay all invoices in full."
+        ]
+      }
+    },
+    {
+      "id": "TERMINATION-CONVENIENCE-001",
+      "version": 1,
+      "name": "Termination for convenience",
+      "category": "Termination",
+      "enabled": true,
+      "severity": "medium",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "all": [
+          {
+            "phrase": "terminat*"
+          },
+          {
+            "any": [
+              {
+                "phrase": "for convenience"
+              },
+              {
+                "phrase": "for any reason"
+              },
+              {
+                "phrase": "without cause"
+              }
+            ]
+          }
+        ],
+        "exclude": {
+          "scope": "matched_sentence",
+          "any": [
+            {
+              "phrase": "either party"
+            }
+          ]
+        }
+      },
+      "review": {
+        "title": "One-sided termination for convenience",
+        "message": "The counterparty may terminate without cause. Seek mutuality, a notice period, and payment for work performed and committed costs.",
+        "templateIds": [
+          "TERMINATION-MUTUAL"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Customer may terminate this Agreement for convenience at any time."
+        ],
+        "shouldNotMatch": [
+          "Either party may terminate this Agreement for convenience on sixty days' notice.",
+          "Customer may terminate for material breach."
+        ]
+      }
+    },
+    {
+      "id": "WARRANTY-ABSOLUTE-001",
+      "version": 1,
+      "name": "Absolute performance guarantees",
+      "category": "Warranties",
+      "enabled": true,
+      "severity": "medium",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "any": [
+          {
+            "phrase": "guarantee*"
+          },
+          {
+            "phrase": "error-free"
+          },
+          {
+            "phrase": "uninterrupted"
+          },
+          {
+            "phrase": "free from all defects"
+          },
+          {
+            "phrase": "meet all of customer's requirements"
+          }
+        ],
+        "exclude": {
+          "scope": "matched_sentence",
+          "any": [
+            {
+              "phrase": "does not guarantee"
+            },
+            {
+              "phrase": "no guarantee"
+            },
+            {
+              "phrase": "does not warrant"
+            },
+            {
+              "phrase": "disclaim*"
+            }
+          ]
+        }
+      },
+      "review": {
+        "title": "Absolute warranty",
+        "message": "Warranty language promises outcomes rather than professional performance."
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider guarantees that the software will be error-free and uninterrupted."
+        ],
+        "shouldNotMatch": [
+          "Provider does not guarantee uninterrupted operation."
+        ]
+      }
+    },
+    {
+      "id": "SCOPE-IMPLIED-001",
+      "version": 1,
+      "name": "Implied or unbounded scope",
+      "category": "Scope of services",
+      "enabled": true,
+      "severity": "medium",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "any": [
+          {
+            "phrase": "reasonably implied"
+          },
+          {
+            "phrase": "necessarily implied"
+          },
+          {
+            "phrase": "incidental services"
+          },
+          {
+            "phrase": "all services necessary"
+          }
+        ]
+      },
+      "review": {
+        "title": "Implied services",
+        "message": "Scope extends to services implied by, rather than described in, the SOW.",
+        "templateIds": [
+          "SCOPE-EXPRESS"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider shall perform the services, including any services reasonably implied thereby."
+        ],
+        "shouldNotMatch": [
+          "Provider shall perform the services described in the SOW."
+        ]
+      }
+    },
+    {
+      "id": "CHANGE-UNILATERAL-001",
+      "version": 1,
+      "name": "Unilateral changes to scope",
+      "category": "Change control",
+      "enabled": true,
+      "severity": "medium",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "all": [
+          {
+            "any": [
+              {
+                "phrase": "change*"
+              },
+              {
+                "phrase": "modif*"
+              },
+              {
+                "phrase": "amend*"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "phrase": "at any time"
+              },
+              {
+                "phrase": "sole discretion"
+              },
+              {
+                "phrase": "unilateral*"
+              },
+              {
+                "phrase": "without additional charge"
+              },
+              {
+                "phrase": "without additional cost"
+              },
+              {
+                "phrase": "at no additional"
+              }
+            ]
+          }
+        ],
+        "exclude": {
+          "scope": "matched_sentence",
+          "any": [
+            {
+              "phrase": "mutually agreed"
+            },
+            {
+              "phrase": "change order"
+            },
+            {
+              "phrase": "signed by both parties"
+            },
+            {
+              "phrase": "mutual written agreement"
+            }
+          ]
+        }
+      },
+      "review": {
+        "title": "Unilateral scope changes",
+        "message": "The counterparty can change scope without a mutually agreed change order or fee adjustment.",
+        "templateIds": [
+          "CHANGE-ORDER"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Customer may request changes to any SOW at any time, and Provider shall implement such changes without additional charge."
+        ],
+        "shouldNotMatch": [
+          "Changes take effect only through a written change order signed by both parties."
+        ]
+      }
+    },
+    {
+      "id": "SECURITY-INCORPORATED-001",
+      "version": 1,
+      "name": "Policies incorporated as amended",
+      "category": "Security and privacy",
+      "enabled": true,
+      "severity": "medium",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "all": [
+          {
+            "any": [
+              {
+                "phrase": "polic*"
+              },
+              {
+                "phrase": "standards"
+              },
+              {
+                "phrase": "guidelines"
+              },
+              {
+                "phrase": "code of conduct"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "phrase": "as amended from time to time"
+              },
+              {
+                "phrase": "as updated from time to time"
+              },
+              {
+                "phrase": "as may be amended"
+              },
+              {
+                "phrase": "as modified from time to time"
+              },
+              {
+                "phrase": "then-current"
+              }
+            ]
+          }
+        ]
+      },
+      "review": {
+        "title": "Policies that can change unilaterally",
+        "message": "An outside policy is incorporated as amended from time to time, so the counterparty can change the company's obligations without agreement.",
+        "templateIds": [
+          "POLICY-FIXED-VERSION"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider shall comply with Customer's Security Policy, as amended from time to time."
+        ],
+        "shouldNotMatch": [
+          "Provider shall comply with the Security Policy attached as Exhibit C."
+        ]
+      }
+    },
+    {
+      "id": "AUDIT-BROAD-001",
+      "version": 1,
+      "name": "Broad audit rights",
+      "category": "Audit",
+      "enabled": true,
+      "severity": "low",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "all": [
+          {
+            "any": [
+              {
+                "phrase": "audit*"
+              },
+              {
+                "phrase": "inspect*"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "phrase": "at any time"
+              },
+              {
+                "phrase": "without notice"
+              },
+              {
+                "phrase": "all books and records"
+              },
+              {
+                "phrase": "unlimited"
+              }
+            ]
+          }
+        ]
+      },
+      "review": {
+        "title": "Broad audit rights",
+        "message": "Audit rights lack notice, frequency, scope or cost limits."
+      },
+      "tests": {
+        "shouldMatch": [
+          "Customer may audit all books and records of Provider at any time."
+        ],
+        "shouldNotMatch": [
+          "Customer may audit relevant records once per year on thirty days' notice."
+        ]
+      }
+    },
+    {
+      "id": "PUBLICITY-NONDISPARAGE-001",
+      "version": 1,
+      "name": "Non-disparagement",
+      "category": "Publicity",
+      "enabled": true,
+      "severity": "low",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "any": [
+          {
+            "phrase": "disparag*"
+          },
+          {
+            "phrase": "non-disparage*"
+          }
+        ]
+      },
+      "review": {
+        "title": "Non-disparagement",
+        "message": "Restricts the company's statements about the counterparty. Check that it is mutual and has carve-outs for legal process."
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider shall not make any disparaging statements about Customer."
+        ],
+        "shouldNotMatch": [
+          "Provider may issue a press release with consent."
+        ]
+      }
+    },
+    {
+      "id": "ASSIGNMENT-COC-001",
+      "version": 1,
+      "name": "Change-of-control restrictions",
+      "category": "Assignment",
+      "enabled": true,
+      "severity": "low",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "all": [
+          {
+            "phrase": "assign*"
+          },
+          {
+            "any": [
+              {
+                "phrase": "change of control"
+              },
+              {
+                "phrase": "change in control"
+              },
+              {
+                "phrase": "merger"
+              },
+              {
+                "phrase": "acquisition"
+              }
+            ]
+          }
+        ]
+      },
+      "review": {
+        "title": "Change-of-control restriction",
+        "message": "Consent may be required for a merger or acquisition of the company."
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider may not assign this Agreement, including by merger or change of control, without consent."
+        ],
+        "shouldNotMatch": [
+          "Neither party may assign this Agreement without consent."
+        ]
+      }
+    },
+    {
+      "id": "DISPUTE-FEES-001",
+      "version": 1,
+      "name": "Prevailing-party fees",
+      "category": "Dispute resolution",
+      "enabled": true,
+      "severity": "low",
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "any": [
+          {
+            "phrase": "prevailing party"
+          },
+          {
+            "phrase": "attorney* fees"
+          }
+        ]
+      },
+      "review": {
+        "title": "Fee-shifting",
+        "message": "Litigation costs may shift to the losing party."
+      },
+      "tests": {
+        "shouldMatch": [
+          "The prevailing party shall recover its reasonable attorneys' fees."
+        ],
+        "shouldNotMatch": [
+          "Each party bears its own costs."
+        ]
+      }
+    },
+    {
+      "id": "GOVLAW-MISSING-001",
+      "version": 1,
+      "name": "Governing law",
+      "category": "Dispute resolution",
+      "enabled": true,
+      "severity": "medium",
+      "type": "absence",
+      "match": {
+        "any": [
+          {
+            "phrase": "governed by the laws"
+          },
+          {
+            "phrase": "governing law"
+          },
+          {
+            "phrase": "construed in accordance with the laws"
+          }
+        ]
+      },
+      "review": {
+        "title": "No governing law",
+        "message": "No governing-law provision was located.",
+        "templateIds": [
+          "GOVLAW-INSERT"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider shall perform the services."
+        ],
+        "shouldNotMatch": [
+          "This Agreement is governed by the laws of Delaware."
+        ]
+      }
+    },
+    {
+      "id": "CONFIDENTIALITY-MISSING-001",
+      "version": 1,
+      "name": "Confidentiality",
+      "category": "Confidentiality",
+      "enabled": true,
+      "severity": "medium",
+      "appliesTo": {
+        "documentTypes": [
+          "msa",
+          "sow"
+        ]
+      },
+      "type": "absence",
+      "match": {
+        "any": [
+          {
+            "phrase": "confidential information"
+          },
+          {
+            "phrase": "confidentiality"
+          }
+        ]
+      },
+      "partial": {
+        "phrase": "confidential"
+      },
+      "review": {
+        "title": "No confidentiality provision",
+        "message": "No confidentiality obligations were located. Check whether a separate NDA governs.",
+        "templateIds": [
+          "CONFIDENTIALITY-INSERT"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider shall perform the services."
+        ],
+        "shouldNotMatch": [
+          "Each party shall protect the other's Confidential Information."
+        ]
+      }
+    },
+    {
+      "id": "NDA-EXCLUSIONS-MISSING-001",
+      "version": 1,
+      "name": "Standard confidentiality exclusions",
+      "category": "Confidentiality",
+      "enabled": true,
+      "severity": "high",
+      "appliesTo": {
+        "documentTypes": [
+          "nda"
+        ]
+      },
+      "type": "absence",
+      "match": {
+        "all": [
+          {
+            "any": [
+              {
+                "phrase": "publicly available"
+              },
+              {
+                "phrase": "public domain"
+              },
+              {
+                "phrase": "generally available to the public"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "phrase": "independently develop*"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "phrase": "rightfully received"
+              },
+              {
+                "phrase": "rightfully obtained"
+              },
+              {
+                "phrase": "lawfully obtained"
+              },
+              {
+                "phrase": "already known"
+              },
+              {
+                "phrase": "prior to disclosure"
+              }
+            ]
+          }
+        ]
+      },
+      "partial": {
+        "any": [
+          {
+            "phrase": "publicly available"
+          },
+          {
+            "phrase": "public domain"
+          },
+          {
+            "phrase": "independently develop*"
+          }
+        ]
+      },
+      "review": {
+        "title": "Missing standard exclusions",
+        "message": "The definition of Confidential Information lacks some of the standard exclusions (public, independently developed, rightfully received).",
+        "templateIds": [
+          "NDA-EXCLUSIONS-INSERT"
+        ]
+      },
+      "tests": {
+        "shouldMatch": [
+          "Confidential Information means all information disclosed.",
+          "Confidential Information excludes information in the public domain."
+        ],
+        "shouldNotMatch": [
+          "Confidential Information excludes information that is publicly available, independently developed, or rightfully received from a third party."
+        ]
+      }
+    },
+    {
+      "id": "NDA-PERPETUAL-001",
+      "version": 1,
+      "name": "Perpetual confidentiality",
+      "category": "Confidentiality",
+      "enabled": true,
+      "severity": "medium",
+      "appliesTo": {
+        "documentTypes": [
+          "nda"
+        ]
+      },
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "all": [
+          {
+            "any": [
+              {
+                "phrase": "in perpetuity"
+              },
+              {
+                "phrase": "perpetual"
+              },
+              {
+                "phrase": "indefinitely"
+              },
+              {
+                "phrase": "no expiration"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "phrase": "confidential*"
+              },
+              {
+                "phrase": "obligation*"
+              }
+            ]
+          }
+        ],
+        "exclude": {
+          "scope": "matched_sentence",
+          "phrase": "trade secret*"
+        }
+      },
+      "review": {
+        "title": "Perpetual confidentiality",
+        "message": "Confidentiality never expires. The playbook allows perpetual terms only for trade secrets."
+      },
+      "tests": {
+        "shouldMatch": [
+          "The confidentiality obligations shall continue in perpetuity."
+        ],
+        "shouldNotMatch": [
+          "Obligations regarding trade secrets continue in perpetuity."
+        ]
+      }
+    },
+    {
+      "id": "NDA-RESIDUALS-001",
+      "version": 1,
+      "name": "Residuals clause",
+      "category": "Confidentiality",
+      "enabled": true,
+      "severity": "medium",
+      "appliesTo": {
+        "documentTypes": [
+          "nda"
+        ],
+        "reviewPerspective": [
+          "discloser",
+          "mutual"
+        ]
+      },
+      "type": "presence",
+      "match": {
+        "scope": "sentence",
+        "any": [
+          {
+            "phrase": "residuals"
+          },
+          {
+            "phrase": "unaided memory"
+          },
+          {
+            "phrase": "retained in memory"
+          }
+        ]
+      },
+      "review": {
+        "title": "Residuals clause",
+        "message": "The recipient may use information retained in memory, which weakens protection for the discloser."
+      },
+      "tests": {
+        "shouldMatch": [
+          "Recipient may use residuals retained in the unaided memory of its personnel."
+        ],
+        "shouldNotMatch": [
+          "Recipient shall return all materials."
+        ]
+      }
+    },
+    {
+      "id": "INSURANCE-HIGH-001",
+      "version": 1,
+      "name": "High insurance requirements",
+      "category": "Insurance",
+      "enabled": true,
+      "severity": "low",
+      "type": "threshold",
+      "match": {
+        "scope": "sentence",
+        "any": [
+          {
+            "phrase": "insurance"
+          },
+          {
+            "phrase": "coverage"
+          }
+        ]
+      },
+      "threshold": {
+        "extract": "money",
+        "op": ">",
+        "value": 5000000
+      },
+      "review": {
+        "title": "High insurance limits",
+        "message": "Required coverage of ${{value}} exceeds the company's standard program."
+      },
+      "tests": {
+        "shouldMatch": [
+          "Provider shall maintain insurance coverage of $10,000,000 per occurrence."
+        ],
+        "shouldNotMatch": [
+          "Provider shall maintain insurance coverage of $2,000,000 per occurrence."
+        ]
+      }
+    }
+  ],
+  "templates": [
+    {
+      "id": "NONCOMPETE-DELETE",
+      "category": "Restrictive covenants",
+      "position": "delete",
+      "title": "Delete the restriction",
+      "action": "deleteSentence",
+      "text": "",
+      "explanation": "Preferred position: the company does not accept restrictions on serving other customers.",
+      "sample": true
+    },
+    {
+      "id": "NONCOMPETE-FALLBACK",
+      "category": "Restrictive covenants",
+      "position": "fallback",
+      "title": "Limit to misuse of confidential information",
+      "action": "replaceSentence",
+      "text": "Nothing in this Agreement restricts {{COMPANY_NAME}} from providing services to other customers, including competitors of {{COUNTERPARTY}}, provided that {{COMPANY_NAME}} does not use {{COUNTERPARTY}}’s Confidential Information in doing so.",
+      "explanation": "Fallback: replace the restriction with a confidentiality-based protection.",
+      "sample": true
+    },
+    {
+      "id": "NONSOLICIT-MUTUAL",
+      "category": "Restrictive covenants",
+      "position": "fallback",
+      "title": "Mutual, 12-month, with ad carve-out",
+      "action": "replaceSentence",
+      "text": "During the Term and for twelve (12) months thereafter, neither party shall knowingly solicit for employment any employee of the other party who was directly involved in the services, provided that general solicitations not targeted at such employees are permitted.",
+      "sample": true
+    },
+    {
+      "id": "IP-OWNERSHIP-PREFERRED",
+      "category": "Intellectual property",
+      "position": "preferred",
+      "title": "Customer owns deliverables; company keeps pre-existing IP",
+      "action": "replaceSentence",
+      "text": "{{COUNTERPARTY}} shall own the deliverables created specifically for {{COUNTERPARTY}} under an SOW. {{COMPANY_NAME}} retains all rights in its pre-existing materials, tools, methodologies and know-how, and grants {{COUNTERPARTY}} a non-exclusive, perpetual license to use any of them incorporated into the deliverables.",
+      "explanation": "Keeps the company's reusable assets while giving the customer what it pays for.",
+      "sample": true
+    },
+    {
+      "id": "IP-OWNERSHIP-FALLBACK",
+      "category": "Intellectual property",
+      "position": "fallback",
+      "title": "Company owns; customer gets broad license",
+      "action": "replaceSentence",
+      "text": "{{COMPANY_NAME}} retains ownership of all work product and grants {{COUNTERPARTY}} a perpetual, irrevocable, royalty-free license to use the deliverables for its internal business purposes.",
+      "sample": true
+    },
+    {
+      "id": "INDEMNITY-FAULT-BASED",
+      "category": "Indemnification",
+      "position": "preferred",
+      "title": "Fault-based, third-party claims only",
+      "action": "replaceSentence",
+      "text": "{{COMPANY_NAME}} shall defend and indemnify {{COUNTERPARTY}} against third-party claims to the extent caused by {{COMPANY_NAME}}’s gross negligence, willful misconduct, or infringement of a third party’s intellectual property rights.",
+      "sample": true
+    },
+    {
+      "id": "LIABILITY-CAP-INSERT",
+      "category": "Liability",
+      "position": "insert",
+      "title": "Insert standard limitation of liability",
+      "action": "insertAfter",
+      "text": "Limitation of Liability. Except for a party’s indemnification obligations or its gross negligence or willful misconduct, neither party’s aggregate liability arising out of or related to this Agreement shall exceed the fees paid or payable under the applicable SOW during the twelve (12) months preceding the claim, and neither party shall be liable for any indirect, incidental, consequential, special or punitive damages.",
+      "sample": true
+    },
+    {
+      "id": "PAYMENT-NET30",
+      "category": "Payment",
+      "position": "preferred",
+      "title": "Net 30, not contingent",
+      "action": "replaceSentence",
+      "text": "{{COUNTERPARTY}} shall pay all undisputed invoices within thirty (30) days of receipt, and payment is not contingent on {{COUNTERPARTY}}’s receipt of payment from any third party.",
+      "sample": true
+    },
+    {
+      "id": "TERMINATION-MUTUAL",
+      "category": "Termination",
+      "position": "preferred",
+      "title": "Mutual, with notice and payment for work performed",
+      "action": "replaceSentence",
+      "text": "Either party may terminate this Agreement for convenience on {{NOTICE_DAYS}} days’ written notice, and {{COUNTERPARTY}} shall pay for all services performed and non-cancellable costs incurred through the effective date of termination.",
+      "sample": true
+    },
+    {
+      "id": "SCOPE-EXPRESS",
+      "category": "Scope of services",
+      "position": "preferred",
+      "title": "Limit scope to the SOW",
+      "action": "replaceSentence",
+      "text": "{{COMPANY_NAME}} shall perform the services expressly described in each Statement of Work (“SOW”).",
+      "sample": true
+    },
+    {
+      "id": "CHANGE-ORDER",
+      "category": "Change control",
+      "position": "preferred",
+      "title": "Mutual written change orders",
+      "action": "replaceSentence",
+      "text": "Either party may request changes to an SOW. Changes take effect only through a written change order signed by both parties, including any adjustment to fees and schedule.",
+      "sample": true
+    },
+    {
+      "id": "POLICY-FIXED-VERSION",
+      "category": "Security and privacy",
+      "position": "preferred",
+      "title": "Fix the policy version",
+      "action": "replaceSentence",
+      "text": "{{COMPANY_NAME}} shall comply with {{COUNTERPARTY}}’s Security Policy in the version attached as Exhibit {{EXHIBIT}}. Changes to that policy apply to {{COMPANY_NAME}} only upon the parties’ written agreement.",
+      "sample": true
+    },
+    {
+      "id": "GOVLAW-INSERT",
+      "category": "Dispute resolution",
+      "position": "insert",
+      "title": "Insert governing law",
+      "action": "insertAfter",
+      "text": "Governing Law. This Agreement is governed by the laws of the State of {{GOVERNING_LAW}}, without regard to its conflict-of-laws rules.",
+      "sample": true
+    },
+    {
+      "id": "CONFIDENTIALITY-INSERT",
+      "category": "Confidentiality",
+      "position": "insert",
+      "title": "Insert mutual confidentiality",
+      "action": "insertAfter",
+      "text": "Confidentiality. Each party shall protect the other party’s Confidential Information with at least reasonable care, use it only to perform this Agreement, and disclose it only to personnel and advisers who need to know it and are bound by similar obligations.",
+      "sample": true
+    },
+    {
+      "id": "NDA-EXCLUSIONS-INSERT",
+      "category": "Confidentiality",
+      "position": "insert",
+      "title": "Insert standard exclusions",
+      "action": "insertAfter",
+      "text": "Confidential Information does not include information that (a) is or becomes publicly available through no fault of the recipient, (b) was rightfully received from a third party without a duty of confidentiality, (c) was already known to the recipient prior to disclosure, or (d) is independently developed without use of the Confidential Information.",
+      "sample": true
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@docugoat/docx",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DOCX read/patch/export with tracked changes (offset-preserving XML, run-level diffs)",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "fflate": "^0.8.3",
+    "@docugoat/util": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

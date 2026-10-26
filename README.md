@@ -17,30 +17,39 @@ Zero-knowledge e-signatures. Write in markdown, seal it in your browser, hand ea
 
 In serverless mode the owner signs in with a **username + passphrase**. Those derive a key that encrypts the owner's vault (envelope codes, link secrets, the data-repo token), and the encrypted vault is stored in the data repo too — so any device with the two secrets can pick up where another left off. Signers never need an account: their link carries the data-repo write token in the URL fragment, so their browser can commit the encrypted signature itself.
 
-## Layout
+## Layout (monorepo)
 
 | Path | What |
 | --- | --- |
-| `web/` | Vite + React app. All crypto happens here. |
-| `server/` | Express relay. Stores ciphertext in an isolated git repo under `server/data/relay`. |
+| `apps/docugoat/` | The signing app (Vite + React). All crypto happens here. |
+| `apps/reviewer/` | Contract Reviewer: browser-only DOCX redlining workbench (import → tracked-change edits → export), rules findings, draft comparison. Plain TypeScript. |
+| `apps/relay/` | Optional Express relay. Stores ciphertext in an isolated git repo under `apps/relay/data/relay`. |
+| `packages/docx/` | DOCX read/patch/export with tracked changes — offset-preserving XML parser, run-level diffs, edit-safety rules. |
+| `packages/rules/` | Contract rules engine: JSON playbooks (presence / absence / threshold), findings with offsets, approved-language templates, rulepack validation. |
+| `packages/review/` | Document ⇄ rules bridge and draft comparison. |
+| `packages/util/` | Shared hashing. |
+
+The signing app's composer runs `packages/rules` over the markdown draft as you type (the **Review** panel), with the sample commercial playbook or an imported pack. The reviewer app is published alongside at `/review/`.
 
 ## Run locally
 
 ```sh
 npm install
-npm run dev          # relay on http://localhost:4173, web on https://localhost:5183 (self-signed)
+npm run dev            # relay on http://localhost:4173, signing app on https://localhost:5183 (self-signed)
+npm run dev:reviewer   # contract reviewer on http://localhost:5184
+npm test               # reviewer suites (vitest, 156 tests) + signing app suites
 ```
 
 WebCrypto only exists in secure contexts, so the web app must be served over **HTTPS** or `localhost`.
 
-Tests (`cd web`): `npm test` — editor round-trip in jsdom, PDF render through pdfmake's Node printer, and a 25-check end-to-end run of the real crypto module against a live relay.
+Signing-app tests (`cd apps/docugoat`): `npm test` — editor round-trip in jsdom, PDF render through pdfmake's Node printer, and a 25-check end-to-end run of the real crypto module against a live relay; `npm run test:github` exercises the serverless GitHub backend.
 
 ## Deploy
 
 ### Web app → GitHub Pages (serverless)
 
 1. Create a **public** data repo (default name `docugoat-data`). It will only ever contain ciphertext.
-2. `npm run deploy:pages` builds `web/` with `VITE_BASE=/<repo>/ VITE_BACKEND=github VITE_GH_OWNER=<you> VITE_GH_DATA_REPO=docugoat-data` and pushes the output to the `gh-pages` branch. Override with `DATA_REPO=…`, or `BACKEND=relay RELAY_URL=https://relay.example.com` for relay mode.
+2. `npm run deploy:pages` builds `apps/docugoat/` (plus the reviewer into `/review/`) with `VITE_BASE=/<repo>/ VITE_BACKEND=github VITE_GH_OWNER=<you> VITE_GH_DATA_REPO=docugoat-data` and pushes the output to the `gh-pages` branch. Override with `DATA_REPO=…`, or `BACKEND=relay RELAY_URL=https://relay.example.com` for relay mode.
 3. On the site, open **Sign in → Create**: choose a username and passphrase, and paste a **fine-grained personal access token** (GitHub → Settings → Developer settings → Fine-grained tokens) scoped to the data repo with *Contents: Read and write*. That token is encrypted into your vault and travels inside signer links; it can write to that one repo and nothing else.
 
 Rate limits: anonymous GitHub API reads are 60/hour per IP; authenticated ones (owners signed in, signers via the link token) are 5,000/hour.
@@ -50,12 +59,12 @@ An equivalent GitHub Actions workflow lives at `deploy/pages-workflow.yml`; move
 ### Relay → anywhere with Docker
 
 ```sh
-docker build -f server/Dockerfile -t docugoat-relay .
-docker run -d -p 4173:4173 -v docugoat-data:/app/server/data \
+docker build -f apps/relay/Dockerfile -t docugoat-relay .
+docker run -d -p 4173:4173 -v docugoat-data:/app/apps/relay/data \
   -e ALLOWED_ORIGINS=https://<user>.github.io docugoat-relay
 ```
 
-Put it behind TLS (Caddy, nginx, a tunnel) — the Pages site is HTTPS and browsers refuse mixed content. `ALLOWED_ORIGINS` is the comma-separated list of origins allowed to call the relay. The relay's attestation key is created on first start at `server/data/relay-ed25519.json`; keep the volume.
+Put it behind TLS (Caddy, nginx, a tunnel) — the Pages site is HTTPS and browsers refuse mixed content. `ALLOWED_ORIGINS` is the comma-separated list of origins allowed to call the relay. The relay's attestation key is created on first start at `apps/relay/data/relay-ed25519.json`; keep the volume.
 
 ## Security model
 
