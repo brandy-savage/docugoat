@@ -24,9 +24,11 @@ export function Landing() {
             carries ciphertext — it can't read your contract, your names, or your signatures. Nothing to subpoena, nothing to leak.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link to="/new" className="btn-primary px-5 py-3 text-base">Create a document <ArrowRight size={16} /></Link>
+            <Link to="/review" className="btn-primary px-5 py-3 text-base">Review a Word document <ArrowRight size={16} /></Link>
+            <Link to="/new" className="btn-secondary px-5 py-3 text-base">Write one in markdown</Link>
             <Link to="/security" className="btn-ghost">How it stays private</Link>
           </div>
+          <p className="mt-4 text-sm text-bone-500">One flow: redline and run your playbook on the contract, apply approved language, then seal it and issue signing codes — without the document ever leaving your browser unencrypted.</p>
         </div>
         <form onSubmit={go} className="surface rise-in p-6" style={{ animationDelay: "120ms" }}>
           <p className="eyebrow mb-3">Received a document?</p>
@@ -55,7 +57,7 @@ export function Landing() {
         <p className="eyebrow mb-6">How it works</p>
         <ol className="grid gap-6 md:grid-cols-4">
           {[
-            ["Write", "Rich editor or raw markdown. Your draft never leaves the tab."],
+            ["Review", "Drop in a Word file: redline it, run the playbook, apply approved clauses — or write in markdown."],
             ["Seal", "Your browser encrypts the document and issues a personal code to every signer. Only ciphertext is uploaded."],
             ["Share", "Send the link through one channel and each code through another."],
             ["Sign & verify", "They unlock, sign in the highlighted fields, and the encrypted signature comes back to you."],

@@ -100,6 +100,7 @@ export function Compose() {
           <p className="mt-1 text-xs text-bone-500">{words} words · {fields.length} field{fields.length === 1 ? "" : "s"} · {restored ? "draft restored from this device" : "draft autosaves on this device"} · nothing uploads until you seal</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link to="/review" className="btn-ghost">Have a Word file? Review it instead</Link>
           <button type="button" className={preview ? "btn-secondary" : "btn-ghost"} onClick={() => setPreview(!preview)}><Eye size={15} /> {preview ? "Back to editor" : "Preview as signer"}</button>
           <button className="btn-primary" disabled={busy} onClick={seal}>
             {busy ? <><Spinner /> Sealing on-device…</> : <><Lock size={15} /> Seal &amp; get codes</>}
@@ -199,7 +200,7 @@ export function Compose() {
             </div>
           </div>
 
-          <Findings markdown={markdown} />
+          <Findings markdown={markdown} onChange={setMarkdown} />
 
           <div className="surface space-y-4 p-5">
             <p className="eyebrow">Envelope</p>

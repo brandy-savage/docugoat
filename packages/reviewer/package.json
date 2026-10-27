@@ -1,0 +1,24 @@
+{
+  "name": "@docugoat/reviewer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Contract Reviewer UI (DOM) and IndexedDB store, mountable into any host page",
+  "exports": {
+    "./*": "./src/*.ts",
+    "./style.css": "./src/style.css"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@docugoat/docx": "0.1.0",
+    "@docugoat/rules": "0.1.0",
+    "@docugoat/review": "0.1.0",
+    "fflate": "^0.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

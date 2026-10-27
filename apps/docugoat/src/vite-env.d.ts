@@ -8,3 +8,5 @@ interface ImportMetaEnv {
   readonly VITE_GH_DATA_BRANCH?: string;
 }
 interface ImportMeta { readonly env: ImportMetaEnv }
+
+declare module "*.css?raw" { const css: string; export default css; }

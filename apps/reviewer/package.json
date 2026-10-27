@@ -17,7 +17,8 @@
     "@docugoat/docx": "0.1.0",
     "@docugoat/rules": "0.1.0",
     "@docugoat/review": "0.1.0",
-    "fflate": "^0.8.3"
+    "fflate": "^0.8.3",
+    "@docugoat/reviewer": "0.1.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",

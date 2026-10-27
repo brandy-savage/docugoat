@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, FileSearch, Upload } from "lucide-react";
+import { AlertTriangle, FileSearch, Upload, Wand2 } from "lucide-react";
 import { Pill } from "./ui";
-import { SAMPLE_PACK, STORED_PACK, loadPack, reviewMarkdown, type DocumentType, type Perspective, type Rulepack } from "../lib/review";
+import { SAMPLE_PACK, STORED_PACK, applyChange, fillTemplate, loadPack, loadVars, planFor, reviewMarkdown, saveVars, templateVariables, type ClauseTemplate, type DocumentType, type Finding, type Perspective, type Rulepack } from "../lib/review";
 
 const DOC_TYPES: { v: DocumentType; l: string }[] = [{ v: "nda", l: "NDA" }, { v: "msa", l: "MSA" }, { v: "sow", l: "SOW" }, { v: "other", l: "Other" }];
 const PERSPECTIVES: { v: Perspective; l: string }[] = [
@@ -9,14 +9,35 @@ const PERSPECTIVES: { v: Perspective; l: string }[] = [
 ];
 const TONE = { high: "bad", medium: "warn", low: "neutral", info: "neutral" } as const;
 
-export function Findings({ markdown }: { markdown: string }) {
+export function Findings({ markdown, onChange }: { markdown: string; onChange?: (markdown: string) => void }) {
   const deferred = useDeferredValue(markdown);
   const [docType, setDocType] = useState<DocumentType>(() => (localStorage.getItem("docugoat.review.docType") as DocumentType) || "nda");
   const [perspective, setPerspective] = useState<Perspective>(() => (localStorage.getItem("docugoat.review.perspective") as Perspective) || "mutual");
   const [pack, setPack] = useState<Rulepack>(() => { try { const s = localStorage.getItem(STORED_PACK); return s ? (loadPack(s).pack ?? SAMPLE_PACK) : SAMPLE_PACK; } catch { return SAMPLE_PACK; } });
   const [open, setOpen] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const file = useRef<HTMLInputElement>(null);
+
+  function apply(f: Finding, t: ClauseTemplate) {
+    if (!onChange) return;
+    const vars = loadVars();
+    for (const name of templateVariables(t.text)) {
+      if (!vars[name]?.trim()) {
+        const v = window.prompt(`Value for {{${name}}}`, "");
+        if (v === null) return;
+        vars[name] = v.trim();
+      }
+    }
+    saveVars(vars);
+    const { text, missing } = fillTemplate(t.text, vars);
+    if (missing.length) return setError(`Missing values: ${missing.join(", ")}`);
+    const res = applyChange(markdown, planFor(t, f, markdown, text));
+    onChange(res.markdown);
+    setNote(`${t.title}: ${res.note}`);
+    setError(null);
+  }
+  const templatesFor = (f: Finding) => f.templateIds.map((id) => pack.templates.find((t) => t.id === id)).filter((t): t is ClauseTemplate => !!t);
 
   useEffect(() => { localStorage.setItem("docugoat.review.docType", docType); localStorage.setItem("docugoat.review.perspective", perspective); }, [docType, perspective]);
 
@@ -54,6 +75,7 @@ export function Findings({ markdown }: { markdown: string }) {
             <input ref={file} type="file" accept="application/json,.json" className="hidden" onChange={(e) => e.target.files?.[0] && importPack(e.target.files[0])} />
           </div>
           {error && <p className="text-xs text-blood-400">{error}</p>}
+          {note && <p className="rounded-lg border border-moss-500/30 bg-moss-500/10 px-3 py-2 text-xs text-moss-400">{note}</p>}
 
           {result.findings.length === 0 && missing.length === 0 && <p className="text-xs text-bone-500">No findings for this document type and perspective.</p>}
 
@@ -67,6 +89,15 @@ export function Findings({ markdown }: { markdown: string }) {
                 <p className="mt-1 text-xs leading-5 text-bone-400">{f.message}</p>
                 {f.excerpt && <p className="mt-1.5 border-l-2 border-goat-500/40 pl-2 text-[11px] italic leading-4 text-bone-500">“{f.excerpt.length > 180 ? f.excerpt.slice(0, 180) + "…" : f.excerpt}”</p>}
                 <p className="mt-1 text-[10px] uppercase tracking-wider text-bone-500">{f.category}</p>
+                {onChange && templatesFor(f).length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {templatesFor(f).map((t) => (
+                      <button key={t.id} type="button" className="btn-secondary btn-sm" title={t.text.slice(0, 200)} onClick={() => apply(f, t)}>
+                        <Wand2 size={12} /> {t.position === "delete" ? "Strike" : t.position === "insert" ? "Insert" : "Apply"}: {t.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </li>
             ))}
             {missing.map((c) => (
@@ -80,7 +111,7 @@ export function Findings({ markdown }: { markdown: string }) {
             ))}
           </ul>
           {result.errors.length > 0 && <p className="flex items-center gap-1 text-[11px] text-blood-400"><AlertTriangle size={11} /> {result.errors.length} rule(s) failed to run</p>}
-          <p className="text-[11px] leading-5 text-bone-500">Rules run entirely in this tab on the draft as you type. The sample pack's clause language is illustrative — import your own playbook JSON.</p>
+          <p className="text-[11px] leading-5 text-bone-500">Rules run entirely in this tab on the draft as you type. {onChange ? "Approved-language buttons rewrite the draft directly; the sample pack's clauses are illustrative — import your own playbook JSON." : "Edit the document in the reviewer to act on findings."}</p>
         </div>
       )}
     </div>

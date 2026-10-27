@@ -13,6 +13,8 @@ import { Vault } from "./pages/Vault";
 import { Security } from "./pages/Security";
 import { InsecureContext } from "./components/InsecureContext";
 import { Account } from "./pages/Account";
+import { Review } from "./pages/Review";
+import { SealDocx } from "./pages/SealDocx";
 
 const router = createBrowserRouter([
   {
@@ -25,6 +27,8 @@ const router = createBrowserRouter([
       { path: "/vault", element: <Vault /> },
       { path: "/security", element: <Security /> },
       { path: "/account", element: <Account /> },
+      { path: "/review", element: <Review /> },
+      { path: "/seal", element: <SealDocx /> },
     ],
   },
 ], { basename: import.meta.env.BASE_URL.replace(/\/$/, "") || "/" });

@@ -11,6 +11,7 @@ import { BACKEND, setLinkToken, transport } from "../lib/config";
 import { isVerified, loadAudit, loadSignatures, openEnvelope, recordView, signEnvelope, type OpenedEnvelope } from "../lib/envelope";
 import { INPUT_KINDS, fieldKey, parseFields, sameName, type Field } from "../lib/fields";
 import { downloadPdf } from "../lib/pdf";
+import { docxBlob } from "../lib/docxDoc";
 import type { AuditEvent, RelayEnvelope, VerifiedSignature } from "../lib/types";
 import { AuditTrail } from "../components/AuditTrail";
 import { findRecord, removeRecord, saveRecord, type VaultRecord } from "../lib/vault";
@@ -144,6 +145,9 @@ export function EnvelopePage() {
         <div className="flex items-center gap-2">
           <button className="btn-ghost btn-sm" onClick={() => refresh()}><RefreshCw size={13} /> Refresh</button>
           <button className="btn-ghost btn-sm" onClick={() => window.print()}><Printer size={13} /> Print</button>
+          {opened.doc.docx && (
+            <button className="btn-ghost btn-sm" onClick={() => { const a = document.createElement("a"); a.href = URL.createObjectURL(docxBlob(opened.doc.docx!)); a.download = opened.doc.docx!.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }}><Download size={13} /> Original .docx</button>
+          )}
           <button className="btn-secondary btn-sm" onClick={exportPdf} disabled={exporting}>{exporting ? <Spinner /> : <Download size={13} />} Download PDF</button>
           {isOwner && record?.ownerToken && <button className="btn-danger btn-sm" onClick={burn}><Flame size={13} /> Burn</button>}
         </div>
@@ -202,6 +206,7 @@ export function EnvelopePage() {
           <div className="rounded-2xl border hairline p-4 text-[11px] leading-5 text-bone-500">
             <p className="mb-1 font-semibold text-bone-400">Integrity</p>
             <p className="mono break-all">sha256 {opened.documentSha256}</p>
+            {opened.doc.docx && <p className="mono mt-1 break-all">docx {opened.doc.docx.sha256}</p>}
           </div>
         </aside>
       </div>

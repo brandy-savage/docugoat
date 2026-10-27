@@ -15,10 +15,15 @@ export interface ReceiptBody {
   documentSha256: string | null; nonce: string; receivedAt: string; ip: string; userAgent: string;
 }
 
+export interface DocxAttachment { name: string; b64: string; sha256: string; bytes: number }
+
 export interface DocumentPayload {
   v: 2;
   title: string;
+  /** For Word documents this is the derived rendering; the original travels in `docx`. */
   markdown: string;
+  kind?: "markdown" | "docx";
+  docx?: DocxAttachment;
   createdAt: string;
   author: string;
   recipients: Recipient[];

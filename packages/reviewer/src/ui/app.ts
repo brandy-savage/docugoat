@@ -84,6 +84,25 @@ export class App {
 
   // --- Layout -------------------------------------------------------------
 
+  /** Name of the open document, or null. Used by host pages (e.g. the signing flow). */
+  get openDocumentName(): string | null {
+    return this.session?.record.name ?? null;
+  }
+
+  /** The open document as it currently reads, exported with pending edits applied (tracked or clean). */
+  currentExport(mode: 'tracked' | 'clean'): { name: string; bytes: Uint8Array } | null {
+    const s = this.session;
+    if (!s) return null;
+    return { name: s.record.name, bytes: exportDocx(s.docx, s.edits, this.revisionOptions(mode)) };
+  }
+
+  /** Subscribe to document open/close so a host can enable actions. */
+  onSessionChange(listener: (name: string | null) => void): () => void {
+    this.sessionListeners.add(listener);
+    return () => { this.sessionListeners.delete(listener); };
+  }
+  private sessionListeners = new Set<(name: string | null) => void>();
+
   private shell(): HTMLElement {
     const wrap = el('div', 'app');
     wrap.innerHTML = `
@@ -259,7 +278,7 @@ export class App {
         review,
         blocks,
         scan: scan(blocks, this.pack.rules, review.profile),
-      };
+      }; this.sessionListeners.forEach((l) => l(this.session?.record.name ?? null));
       this.comparison = null;
       const comparison = await this.store.getComparison(id);
       if (comparison) this.enterComparison(comparison);
@@ -281,7 +300,7 @@ export class App {
     if (!confirm(`Delete “${record.name}” and all of its saved versions from this browser?`)) return;
     await this.store.deleteDocument(record.id);
     if (this.session?.record.id === record.id) {
-      this.session = null;
+      this.session = null; this.sessionListeners.forEach((l) => l(this.session?.record.name ?? null));
       this.comparison = null;
       this.editing = null;
       this.selected = null;

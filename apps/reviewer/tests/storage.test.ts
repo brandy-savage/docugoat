@@ -1,7 +1,7 @@
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, describe, expect, it } from 'vitest';
 import { exportDocx, openDocx } from '@docugoat/docx/document';
-import { ReviewStore } from '../src/storage/store.ts';
+import { ReviewStore } from '@docugoat/reviewer/storage/store';
 import { sampleMsa } from './fixtures/docx-builder.ts';
 import { findParagraph, replaceText, texts, TRACKED } from './helpers.ts';
 

@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { FilePlus2, Shield, UserRound, Vault as VaultIcon } from "lucide-react";
+import { FilePlus2, FileSearch, Shield, UserRound, Vault as VaultIcon } from "lucide-react";
 import { Logo } from "./ui";
 import { useEffect, useState } from "react";
 import { RELAY_URL, relay } from "../lib/api";
@@ -24,7 +24,8 @@ export function AppShell() {
           </Link>
           {!minimal && (
             <nav className="flex items-center gap-1">
-              <NavLink to="/new" className={active}><FilePlus2 size={15} /> New</NavLink>
+              <NavLink to="/review" className={active}><FileSearch size={15} /> Review</NavLink>
+              <NavLink to="/new" className={active}><FilePlus2 size={15} /> Compose</NavLink>
               <NavLink to="/vault" className={active}><VaultIcon size={15} /> Vault</NavLink>
               <NavLink to="/security" className={active}><Shield size={15} /> Security</NavLink>
               {BACKEND === "github" && <NavLink to="/account" className={active}><UserRound size={15} /> {session ? session.username : "Sign in"}</NavLink>}

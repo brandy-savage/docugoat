@@ -67,7 +67,7 @@ describe('review loop', () => {
 
 describe('review profile guess', () => {
   it('detects the agreement type and the parties’ defined terms', async () => {
-    const { guessProfile } = await import('../src/ui/app.ts');
+    const { guessProfile } = await import('@docugoat/reviewer/ui/app');
     const docx = openDocx(sampleMsa());
     const record = { id: 'x', name: 'Customer MSA.docx', size: 0, sha256: '', importedAt: '' };
     expect(guessProfile(record, docx)).toEqual({
@@ -80,7 +80,7 @@ describe('review profile guess', () => {
 
 describe('agreement type from the title', () => {
   it('treats an SOW that names its governing MSA as an SOW', async () => {
-    const { guessProfile } = await import('../src/ui/app.ts');
+    const { guessProfile } = await import('@docugoat/reviewer/ui/app');
     const { readFileSync } = await import('node:fs');
     const docx = openDocx(new Uint8Array(readFileSync('tests/fixtures/corpus/pydocx-sow.docx')));
     const record = { id: 'x', name: 'Vendor paper.docx', size: 0, sha256: '', importedAt: '' };

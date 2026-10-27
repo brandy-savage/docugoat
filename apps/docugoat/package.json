@@ -31,7 +31,10 @@
     "react-router-dom": "^7.1.1",
     "signature_pad": "^5.0.4",
     "tiptap-markdown": "^0.8.10",
-    "@docugoat/rules": "0.1.0"
+    "@docugoat/rules": "0.1.0",
+    "@docugoat/docx": "0.1.0",
+    "@docugoat/review": "0.1.0",
+    "@docugoat/reviewer": "0.1.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

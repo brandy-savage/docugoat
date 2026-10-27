@@ -1,6 +1,6 @@
-import './style.css';
-import { ReviewStore } from './storage/store.ts';
-import { App } from './ui/app.ts';
+import '@docugoat/reviewer/style.css';
+import { ReviewStore } from '@docugoat/reviewer/storage/store';
+import { App } from '@docugoat/reviewer/ui/app';
 
 const root = document.getElementById('app')!;
 

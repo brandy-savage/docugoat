@@ -8,6 +8,14 @@ Zero-knowledge e-signatures. Write in markdown, seal it in your browser, hand ea
 - **Relay-attested audit trail** — the relay Ed25519-signs time / IP / user agent / hash at seal, view and sign; the browser encrypts the receipt into the bundle. The relay keeps no plaintext IP log.
 - **On-device PDF** — document, filled signatures, certificate and audit trail (pdfmake).
 
+## One flow: review → seal → sign
+
+1. **Review** (`/review`) — drop in a Word `.docx`. The embedded Contract Reviewer lets you redline it with real tracked changes, run a playbook (findings + missing provisions), apply approved language, and compare drafts. Nothing leaves the tab. Or write the document in markdown (`/new`), where the same playbook runs as you type and approved-language buttons rewrite the draft.
+2. **Seal** (`/seal`) — choose a clean copy or keep tracked changes, name the parties, and seal. The original `.docx` travels encrypted inside the envelope alongside a derived rendering; signature spots are text anchors typed anywhere in the Word file: `[[sign: Name]]`, `[[date: Name]]`, `[[initials: Name]]`, `[[text: Name | Label]]`, `[[check: Name | Statement]]`.
+3. **Sign** — each party opens the link with their own code, sees the document with their fields highlighted, signs, and gets a PDF (document, marks, certificate, audit trail) plus the original Word file.
+
+Limits: a `.docx` must be under ~650 KB (GitHub's Contents API refuses reads above 1 MB; base64 adds a third). The signer view and PDF render the document's paragraphs and headings, not Word's full layout — the original file is always one click away.
+
 ## Two ways to run it
 
 | Mode | Where ciphertext lives | Evidence per event | Needs |
@@ -22,14 +30,15 @@ In serverless mode the owner signs in with a **username + passphrase**. Those de
 | Path | What |
 | --- | --- |
 | `apps/docugoat/` | The signing app (Vite + React). All crypto happens here. |
-| `apps/reviewer/` | Contract Reviewer: browser-only DOCX redlining workbench (import → tracked-change edits → export), rules findings, draft comparison. Plain TypeScript. |
+| `apps/reviewer/` | Standalone shell for the Contract Reviewer (the same UI the signing app embeds at `/review`). |
+| `packages/reviewer/` | Contract Reviewer UI (plain DOM) and IndexedDB store, mountable into any host — the signing app mounts it in a shadow root. |
 | `apps/relay/` | Optional Express relay. Stores ciphertext in an isolated git repo under `apps/relay/data/relay`. |
 | `packages/docx/` | DOCX read/patch/export with tracked changes — offset-preserving XML parser, run-level diffs, edit-safety rules. |
 | `packages/rules/` | Contract rules engine: JSON playbooks (presence / absence / threshold), findings with offsets, approved-language templates, rulepack validation. |
 | `packages/review/` | Document ⇄ rules bridge and draft comparison. |
 | `packages/util/` | Shared hashing. |
 
-The signing app's composer runs `packages/rules` over the markdown draft as you type (the **Review** panel), with the sample commercial playbook or an imported pack. The reviewer app is published alongside at `/review/`.
+The signing app embeds the reviewer (`packages/reviewer`) for Word documents and runs `packages/rules` directly over markdown drafts; both paths feed the same seal → sign pipeline.
 
 ## Run locally
 

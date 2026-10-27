@@ -11,8 +11,6 @@ echo "building with VITE_BASE=/$REPO/ VITE_BACKEND=$BACKEND VITE_GH_OWNER=$OWNER
 VITE_BASE="/$REPO/" VITE_BACKEND="$BACKEND" VITE_GH_OWNER="$OWNER" VITE_GH_DATA_REPO="$DATA_REPO" VITE_RELAY_URL="${RELAY_URL:-}" npm run build --workspace apps/docugoat
 cp apps/docugoat/dist/index.html apps/docugoat/dist/404.html
 touch apps/docugoat/dist/.nojekyll
-npm run build --workspace apps/reviewer
-rm -rf apps/docugoat/dist/review && cp -r apps/reviewer/dist apps/docugoat/dist/review
 WT=$(mktemp -d)
 git worktree add --detach "$WT" >/dev/null
 TMPBRANCH="gh-pages-build-$$"

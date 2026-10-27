@@ -7,7 +7,7 @@ import {
 } from "./crypto";
 import { sameName } from "./fields";
 import { canonicalMarkdown } from "./markdown";
-import type { AttestedReceipt, AuditEvent, DocumentPayload, Recipient, ReceiptBody, RelayEnvelope, SignaturePayload, VerifiedSignature, ViewEventPayload } from "./types";
+import type { AttestedReceipt, AuditEvent, DocumentPayload, DocxAttachment, Recipient, ReceiptBody, RelayEnvelope, SignaturePayload, VerifiedSignature, ViewEventPayload } from "./types";
 import { findRecord, saveRecord, type IssuedCode } from "./vault";
 
 /** Signer link. On the GitHub backend it also carries the data-repo write token (in the fragment, never sent to any server but GitHub's API). */
@@ -17,7 +17,7 @@ export function envelopeUrl(id: string, fragmentSecret: string, token = currentW
   return `${location.origin}${base}/d/${id}#k=${fragmentSecret}${t}`;
 }
 
-export interface SealInput { title: string; markdown: string; author: string; authorSigns: boolean; signerNames: string[]; ttlDays: number }
+export interface SealInput { title: string; markdown: string; author: string; authorSigns: boolean; signerNames: string[]; ttlDays: number; docx?: DocxAttachment }
 export interface SealResult { id: string; fragmentSecret: string; ownerToken: string; expiresAt: string; url: string; issued: IssuedCode[] }
 
 export async function sealDocument(input: SealInput): Promise<SealResult> {
@@ -27,6 +27,7 @@ export async function sealDocument(input: SealInput): Promise<SealResult> {
   ];
   const doc: DocumentPayload = {
     v: 2, title: input.title, markdown: canonicalMarkdown(input.markdown), createdAt: new Date().toISOString(), author: input.author, recipients,
+    kind: input.docx ? "docx" : "markdown", ...(input.docx ? { docx: input.docx } : {}),
   };
   const fragmentSecret = generateFragmentSecret();
   const ownerToken = generateOwnerToken();
