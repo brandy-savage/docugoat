@@ -5,10 +5,13 @@ cd "$(dirname "$0")/.."
 REPO=$(basename "$(git rev-parse --show-toplevel)")
 REMOTE=${REMOTE:-origin}
 OWNER=$(gh repo view --json owner -q .owner.login 2>/dev/null || git remote get-url "$REMOTE" | sed -E 's#.*[:/]([^/]+)/[^/]+(\.git)?$#\1#')
-BACKEND=${BACKEND:-github}
+# Default store for the static site. RELAY_URL set (or saved in deploy/relay.url) -> public relay, usable by anyone;
+# otherwise the GitHub data repo (senders then bring their own repo + token under Account).
+RELAY_URL=${RELAY_URL:-$(cat deploy/relay.url 2>/dev/null || true)}
+BACKEND=${BACKEND:-$([ -n "$RELAY_URL" ] && echo relay || echo github)}
 DATA_REPO=${DATA_REPO:-docugoat-data}
-echo "building with VITE_BASE=/$REPO/ VITE_BACKEND=$BACKEND VITE_GH_OWNER=$OWNER VITE_GH_DATA_REPO=$DATA_REPO VITE_RELAY_URL=${RELAY_URL:-<unset>}"
-VITE_BASE="/$REPO/" VITE_BACKEND="$BACKEND" VITE_GH_OWNER="$OWNER" VITE_GH_DATA_REPO="$DATA_REPO" VITE_RELAY_URL="${RELAY_URL:-}" npm run build --workspace apps/docugoat
+echo "building with VITE_BASE=/$REPO/ VITE_BACKEND=$BACKEND VITE_GH_OWNER=$OWNER VITE_GH_DATA_REPO=$DATA_REPO VITE_PUBLIC_RELAY_URL=${RELAY_URL:-<unset>}"
+VITE_BASE="/$REPO/" VITE_BACKEND="$BACKEND" VITE_GH_OWNER="$OWNER" VITE_GH_DATA_REPO="$DATA_REPO" VITE_PUBLIC_RELAY_URL="${RELAY_URL:-}" VITE_RELAY_URL="${RELAY_URL:-}" npm run build --workspace apps/docugoat
 cp apps/docugoat/dist/index.html apps/docugoat/dist/404.html
 touch apps/docugoat/dist/.nojekyll
 WT=$(mktemp -d)

@@ -10,7 +10,7 @@ import { FIELD_RE, fieldToken, parseFields, sameName } from "../lib/fields";
 import { titleFromMarkdown } from "../lib/markdown";
 import { TEMPLATES } from "../lib/templates";
 import { clearDraft, loadDraft, loadVault, saveDraft } from "../lib/vault";
-import { BACKEND, getSession, setSession } from "../lib/config";
+import { canWrite, currentStore, getSession, setSession } from "../lib/config";
 import { saveAccount } from "../lib/account";
 
 export function Compose() {
@@ -65,7 +65,7 @@ export function Compose() {
     setMarkdown(markdown.replace(FIELD_RE, (m, kind: string, name: string, label?: string) => (sameName(name, from) ? fieldToken(kind.toLowerCase() as "sign", next, (label ?? "").trim()) : m)));
   }
 
-  const needsAccount = BACKEND === "github" && !getSession();
+  const needsAccount = currentStore().kind === "github" && !canWrite();
 
   async function seal() {
     if (needsAccount) return setToast({ m: "Sign in first — sealing writes to the GitHub store.", tone: "bad" });
@@ -89,7 +89,7 @@ export function Compose() {
     <div className="mx-auto max-w-7xl px-5 py-8">
       {needsAccount && (
         <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-goat-500/30 bg-goat-500/10 px-5 py-3 text-sm">
-          <span>Drafting is local. To seal and issue codes you need your vault unlocked — it holds the GitHub write token.</span>
+          <span>Drafting is local. To seal into a GitHub store you need your vault unlocked (it holds the write token) — or pick the public relay under Account.</span>
           <Link to="/account" className="btn-primary btn-sm shrink-0">Sign in</Link>
         </div>
       )}

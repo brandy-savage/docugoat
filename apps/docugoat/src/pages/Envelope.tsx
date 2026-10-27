@@ -7,7 +7,7 @@ import { DocumentView } from "../components/DocumentView";
 import { SignaturePad, type SignaturePadHandle } from "../components/SignaturePad";
 import { Pill, Spinner, Toast } from "../components/ui";
 import { RelayError } from "../lib/api";
-import { BACKEND, setLinkToken, transport } from "../lib/config";
+import { canWrite, setLinkStore, storeFromHash, transport } from "../lib/config";
 import { isVerified, loadAudit, loadSignatures, openEnvelope, recordView, signEnvelope, type OpenedEnvelope } from "../lib/envelope";
 import { INPUT_KINDS, fieldKey, parseFields, sameName, type Field } from "../lib/fields";
 import { downloadPdf } from "../lib/pdf";
@@ -27,7 +27,8 @@ export function EnvelopePage() {
   const { hash } = useLocation();
   const frag = new URLSearchParams(hash.replace(/^#/, ""));
   const fragmentSecret = frag.get("k") ?? "";
-  setLinkToken(frag.get("t") ?? undefined);
+  // The link names the store; an owner's own vault record is the fallback for links they generated earlier.
+  setLinkStore(storeFromHash(hash) ?? findRecord(id)?.store ?? null);
   const [phase, setPhase] = useState<Phase>({ k: "loading" });
   const [record, setRecord] = useState<VaultRecord | undefined>(() => findRecord(id));
   const [signatures, setSignatures] = useState<VerifiedSignature[]>([]);
@@ -164,7 +165,7 @@ export function EnvelopePage() {
 
         <aside className="no-print space-y-5 lg:sticky lg:top-20 lg:self-start">
           {iCanSign && !mySignature && (
-            <SignPanel opened={opened} fieldCount={myFields.length} dateCount={myDates} inputs={myInputs} canWrite={BACKEND !== "github" || !!frag.get("t") || !!record} onSigned={async (name) => {
+            <SignPanel opened={opened} fieldCount={myFields.length} dateCount={myDates} inputs={myInputs} canWrite={canWrite()} onSigned={async (name) => {
               if (!isOwner) {
                 const rec: VaultRecord = { id, title: opened.doc.title, fragmentSecret, createdAt: new Date().toISOString(), expiresAt: opened.envelope.expiresAt, role: "signer", code, slot: opened.slot, signerName: name };
                 saveRecord(rec); setRecord(rec);

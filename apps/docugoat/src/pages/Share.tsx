@@ -2,6 +2,8 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { ArrowRight, KeyRound, Link2, MessageSquareWarning, UserRound } from "lucide-react";
 import { CopyButton } from "../components/ui";
 import { envelopeUrl, type SealResult } from "../lib/envelope";
+import { currentStore } from "../lib/config";
+import { storeLabel } from "../lib/store";
 import { findRecord } from "../lib/vault";
 
 export function Share() {
@@ -9,7 +11,7 @@ export function Share() {
   const state = useLocation().state as SealResult | null;
   const rec = state ?? (() => {
     const r = findRecord(id);
-    return r?.issued && { id: r.id, fragmentSecret: r.fragmentSecret, ownerToken: r.ownerToken ?? "", expiresAt: r.expiresAt, url: envelopeUrl(r.id, r.fragmentSecret), issued: r.issued };
+    return r?.issued && { id: r.id, fragmentSecret: r.fragmentSecret, ownerToken: r.ownerToken ?? "", expiresAt: r.expiresAt, url: envelopeUrl(r.id, r.fragmentSecret, r.store ?? currentStore()), issued: r.issued, store: r.store ?? currentStore() };
   })();
   if (!rec) return <div className="mx-auto max-w-xl px-5 py-24 text-center text-bone-500">This envelope isn't in your vault on this device.</div>;
 
@@ -32,7 +34,7 @@ export function Share() {
           <input readOnly className="input mono text-xs" value={rec.url} onFocus={(e) => e.target.select()} />
           <CopyButton value={rec.url} />
         </div>
-        <p className="mt-2 text-xs text-bone-500">The part after <span className="kbd">#</span> is a secret your browser never sends to the server. A code without the link opens nothing.</p>
+        <p className="mt-2 text-xs text-bone-500">Stored in <span className="mono">{storeLabel(rec.store)}</span>. The part after <span className="kbd">#</span> names the store and holds a secret your browser never sends anywhere else. A code without the link opens nothing.</p>
       </div>
 
       <div className="mt-4 space-y-3">
@@ -83,7 +85,7 @@ export function Share() {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-3">
-        <Link to={`/d/${rec.id}#k=${rec.fragmentSecret}`} className="btn-primary">Open as owner &amp; sign <ArrowRight size={15} /></Link>
+        <Link to={`/d/${rec.id}${rec.url.slice(rec.url.indexOf("#"))}`} className="btn-primary">Open as owner &amp; sign <ArrowRight size={15} /></Link>
         <Link to="/vault" className="btn-ghost">Vault</Link>
         <Link to="/new" className="btn-ghost">Create another</Link>
       </div>

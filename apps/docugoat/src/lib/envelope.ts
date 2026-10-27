@@ -1,5 +1,6 @@
 import { relay } from "./api";
-import { BACKEND, currentWriteToken, transport } from "./config";
+import { currentStore, transport, transportFor } from "./config";
+import { storeToParams, type Store } from "./store";
 import { BASE_URL } from "./env";
 import {
   KDF_ITERATIONS, decryptJson, deriveKey, ecdsaSign, ecdsaVerify, encryptJson, fieldsHash, fromB64, generateCode, generateContentKey,
@@ -10,15 +11,15 @@ import { canonicalMarkdown } from "./markdown";
 import type { AttestedReceipt, AuditEvent, DocumentPayload, DocxAttachment, Recipient, ReceiptBody, RelayEnvelope, SignaturePayload, VerifiedSignature, ViewEventPayload } from "./types";
 import { findRecord, saveRecord, type IssuedCode } from "./vault";
 
-/** Signer link. On the GitHub backend it also carries the data-repo write token (in the fragment, never sent to any server but GitHub's API). */
-export function envelopeUrl(id: string, fragmentSecret: string, token = currentWriteToken()): string {
+/** Signer link: id in the path, link secret + store in the fragment (never sent to any server but the store's own API). */
+export function envelopeUrl(id: string, fragmentSecret: string, store: Store = currentStore()): string {
   const base = BASE_URL.replace(/\/$/, "");
-  const t = BACKEND === "github" && token ? `&t=${encodeURIComponent(token)}` : "";
-  return `${location.origin}${base}/d/${id}#k=${fragmentSecret}${t}`;
+  const p = storeToParams(store, new URLSearchParams({ k: fragmentSecret }));
+  return `${location.origin}${base}/d/${id}#${p.toString()}`;
 }
 
 export interface SealInput { title: string; markdown: string; author: string; authorSigns: boolean; signerNames: string[]; ttlDays: number; docx?: DocxAttachment }
-export interface SealResult { id: string; fragmentSecret: string; ownerToken: string; expiresAt: string; url: string; issued: IssuedCode[] }
+export interface SealResult { id: string; fragmentSecret: string; ownerToken: string; expiresAt: string; url: string; issued: IssuedCode[]; store: Store }
 
 export async function sealDocument(input: SealInput): Promise<SealResult> {
   const recipients: Recipient[] = [
@@ -44,7 +45,8 @@ export async function sealDocument(input: SealInput): Promise<SealResult> {
   }
   const sealed = await encryptJson(contentKey, doc);
   const documentSha256 = await sha256Hex(doc.markdown);
-  const res = await transport().seal({
+  const store = currentStore();
+  const res = await transportFor(store).seal({
     documentSha256,
     kdf: { name: "PBKDF2", hash: "SHA-256", iterations: KDF_ITERATIONS, salt: toB64(salt) },
     wraps,
@@ -55,9 +57,9 @@ export async function sealDocument(input: SealInput): Promise<SealResult> {
   });
   saveRecord({
     id: res.id, title: doc.title, fragmentSecret, createdAt: res.createdAt, expiresAt: res.expiresAt,
-    role: "owner", code: issued[0].code, slot: 0, issued, ownerToken, sealReceipt: res.receipt,
+    role: "owner", code: issued[0].code, slot: 0, issued, ownerToken, sealReceipt: res.receipt, store,
   });
-  return { id: res.id, fragmentSecret, ownerToken, expiresAt: res.expiresAt, url: envelopeUrl(res.id, fragmentSecret), issued };
+  return { id: res.id, fragmentSecret, ownerToken, expiresAt: res.expiresAt, url: envelopeUrl(res.id, fragmentSecret, store), issued, store };
 }
 
 export interface OpenedEnvelope {
@@ -84,7 +86,7 @@ export async function openEnvelope(envelope: RelayEnvelope, code: string, fragme
 
 let relayKeyCache: Promise<string | undefined> | null = null;
 function relayKey(): Promise<string | undefined> {
-  if (BACKEND !== "relay") return Promise.resolve(undefined);
+  if (currentStore().kind !== "relay") return Promise.resolve(undefined);
   if (!relayKeyCache) relayKeyCache = relay.relayKey().then((k) => k.publicKey).catch(() => undefined);
   return relayKeyCache;
 }

@@ -16,6 +16,17 @@ Zero-knowledge e-signatures. Write in markdown, seal it in your browser, hand ea
 
 Limits: a `.docx` must be under ~650 KB (GitHub's Contents API refuses reads above 1 MB; base64 adds a third). The signer view and PDF render the document's paragraphs and headings, not Word's full layout — the original file is always one click away.
 
+## Stores: where envelopes live
+
+Every signer link names its store, so one site serves all of them:
+
+| Store | Who can use it | Setup |
+| --- | --- | --- |
+| **Public relay** (default on the Pages site) | anyone — no account, no token | none; the relay attests times and IPs for the audit trail |
+| **Your own GitHub repo** | senders who want zero infrastructure | create a vault under **Account → My GitHub repo** with a public repo you own and a fine-grained token (Contents: read/write on that repo) |
+
+Choose under **Account**. The relay the Pages site points at is read from `deploy/relay.url` at deploy time (`RELAY_URL=… npm run deploy:pages` overrides it).
+
 ## Two ways to run it
 
 | Mode | Where ciphertext lives | Evidence per event | Needs |

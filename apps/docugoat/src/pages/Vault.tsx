@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Flame, Trash2 } from "lucide-react";
 import { Pill } from "../components/ui";
-import { transport, getSession, setSession } from "../lib/config";
+import { currentStore, getSession, setSession, transportFor } from "../lib/config";
+import { envelopeUrl } from "../lib/envelope";
 import { saveAccount } from "../lib/account";
 import { loadVault, removeRecord, type VaultRecord } from "../lib/vault";
 
@@ -14,7 +15,7 @@ export function Vault() {
 
   useEffect(() => {
     records.forEach((r) =>
-      transport().status(r.id)
+      transportFor(r.store ?? currentStore()).status(r.id)
         .then((s) => setStatus((m) => ({ ...m, [r.id]: { status: s.status, signatureCount: s.signatureCount } })))
         .catch(() => setStatus((m) => ({ ...m, [r.id]: { status: "gone", signatureCount: 0 } }))),
     );
@@ -22,7 +23,7 @@ export function Vault() {
 
   async function burn(r: VaultRecord) {
     if (!r.ownerToken || !confirm(`Burn "${r.title}"? This cannot be undone.`)) return;
-    await transport().burn(r.id, r.ownerToken).catch(() => undefined);
+    await transportFor(r.store ?? currentStore()).burn(r.id, r.ownerToken).catch(() => undefined);
     forget(r.id);
   }
   function forget(id: string) {
@@ -48,7 +49,7 @@ export function Vault() {
               <li key={r.id} className="flex flex-wrap items-center justify-between gap-4 p-5">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Link to={`/d/${r.id}#k=${r.fragmentSecret}`} className="truncate font-semibold hover:text-goat-400">{r.title}</Link>
+                    <Link to={`/d/${r.id}${envelopeUrl(r.id, r.fragmentSecret, r.store ?? currentStore()).replace(/^[^#]*/, "")}`} className="truncate font-semibold hover:text-goat-400">{r.title}</Link>
                     <Pill tone={r.role === "owner" ? "warn" : "neutral"}>{r.role}</Pill>
                     <Pill tone={tone}>{s ? s.status : "…"}</Pill>
                   </div>

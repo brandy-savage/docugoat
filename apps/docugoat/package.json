@@ -10,13 +10,14 @@
     "test:e2e": "tsx scripts/e2e-relay.mts",
     "test:editor": "tsx scripts/editor-roundtrip.mts",
     "test:pdf": "tsx scripts/pdf-smoke.mts /tmp/docugoat-smoke.pdf",
-    "test": "npm run test:editor && npm run test:pdf && npm run test:review && npm run test:embed && npm run test:e2e && npm run test:workflow",
+    "test": "npm run test:store && npm run test:editor && npm run test:pdf && npm run test:review && npm run test:embed && npm run test:e2e && npm run test:workflow",
     "test:github": "tsx scripts/e2e-github.mts",
     "test:review": "tsx scripts/review-smoke.mts",
     "test:embed": "tsx scripts/reviewer-embed.mts",
     "test:workflow": "tsx scripts/workflow-ui.mts",
     "test:account": "tsx scripts/e2e-account.mts",
-    "test:all": "npm test && npm run test:github && npm run test:account"
+    "test:all": "npm test && npm run test:github && npm run test:account",
+    "test:store": "tsx scripts/store-links.mts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.1.0",

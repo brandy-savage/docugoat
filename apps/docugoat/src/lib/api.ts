@@ -8,8 +8,8 @@ export class RelayError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
-async function call<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(RELAY_URL + url, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
+async function callAt<T>(base: string, url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(base + url, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new RelayError(res.status, body.error ?? `relay error ${res.status}`);
@@ -17,7 +17,9 @@ async function call<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
-export const relay = {
+export function makeRelay(base: string) {
+  const call = <T,>(url: string, init?: RequestInit) => callAt<T>(base.replace(/\/$/, ""), url, init);
+  return {
   seal: (body: Pick<RelayEnvelope, "kdf" | "wraps" | "cipher" | "ciphertext"> & { ownerToken: string; ttlDays: number; documentSha256: string }) =>
     call<{ id: string; createdAt: string; expiresAt: string; commit: string; receipt: AttestedReceipt }>("/api/envelopes", { method: "POST", body: JSON.stringify(body) }),
   attest: (id: string, action: "view" | "sign", documentSha256: string, nonce: string) =>
@@ -34,4 +36,9 @@ export const relay = {
   signatures: (id: string) => call<{ signatures: RelaySignature[] }>(`/api/envelopes/${id}/signatures`),
   burn: (id: string, ownerToken: string) =>
     call<{ id: string; status: "burned" }>(`/api/envelopes/${id}`, { method: "DELETE", headers: { "x-owner-token": ownerToken } }),
-};
+  };
+}
+
+export type RelayClient = ReturnType<typeof makeRelay>;
+/** Default relay: same origin (dev proxy / relay serving the built app) or VITE_RELAY_URL. */
+export const relay = makeRelay(RELAY_URL);

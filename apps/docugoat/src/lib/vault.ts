@@ -1,5 +1,6 @@
 // Device-local records. Codes live only here, on the device that generated or used them.
 import type { AttestedReceipt, Role } from "./types";
+import type { Store } from "./store";
 
 export interface IssuedCode { slot: number; name: string; role: Role; code: string }
 
@@ -18,6 +19,8 @@ export interface VaultRecord {
   ownerToken?: string;
   signerName?: string;
   sealReceipt?: AttestedReceipt;
+  /** Where the envelope lives. Absent on records from before stores travelled in links. */
+  store?: Store;
 }
 
 const KEY = "docugoat.vault.v2";

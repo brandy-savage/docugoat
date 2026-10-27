@@ -5,7 +5,7 @@ import { DocumentView } from "../components/DocumentView";
 import { Findings } from "../components/Findings";
 import { Field, Spinner, Toast } from "../components/ui";
 import { saveAccount } from "../lib/account";
-import { BACKEND, getSession, setSession } from "../lib/config";
+import { canWrite, currentStore, getSession, setSession } from "../lib/config";
 import { MAX_DOCX_BYTES, docxSource, docxToMarkdown, type DocxSource } from "../lib/docxDoc";
 import { sealDocument } from "../lib/envelope";
 import { parseFields, sameName } from "../lib/fields";
@@ -39,7 +39,7 @@ export function SealDocx() {
   }, [handoff, author]);
 
   const fields = useMemo(() => parseFields(markdown), [markdown]);
-  const needsAccount = BACKEND === "github" && !getSession();
+  const needsAccount = currentStore().kind === "github" && !canWrite();
 
   if (!handoff) {
     return (
@@ -83,7 +83,7 @@ export function SealDocx() {
 
       {needsAccount && (
         <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-goat-500/30 bg-goat-500/10 px-5 py-3 text-sm">
-          <span>To seal and issue codes you need your vault unlocked — it holds the GitHub write token.</span>
+          <span>To seal into a GitHub store you need your vault unlocked (it holds the write token) — or pick the public relay under Account.</span>
           <Link to="/account" className="btn-primary btn-sm shrink-0">Sign in</Link>
         </div>
       )}

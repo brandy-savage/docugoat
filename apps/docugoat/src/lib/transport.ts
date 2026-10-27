@@ -1,6 +1,6 @@
 // Where envelopes live. "relay" = the Express relay (attested receipts, IPs). "github" = the browser talks to a
 // GitHub data repo directly through the Contents API: no server at all, GitHub-recorded commit times as evidence.
-import { relay } from "./api";
+import { makeRelay, relay as defaultRelay, type RelayClient } from "./api";
 import { commitsFor, listDir, readFile, writeFile, type GhConfig } from "./github";
 import type { AttestedReceipt, RelayEnvelope, RelaySignature } from "./types";
 
@@ -26,18 +26,21 @@ export interface Transport {
   commitTimes?(id: string): Promise<Record<string, { date: string; sha: string; verified: boolean }>>;
 }
 
-export const relayTransport: Transport = {
-  backend: "relay",
-  seal: (b) => relay.seal(b),
-  fetch: (id) => relay.fetch(id),
-  status: (id) => relay.status(id),
-  sign: (id, blob) => relay.sign(id, blob),
-  signatures: (id) => relay.signatures(id).then((r) => r.signatures),
-  postEvent: (id, blob) => relay.postEvent(id, blob),
-  events: (id) => relay.events(id).then((r) => r.events),
-  attest: (id, action, sha, nonce) => relay.attest(id, action, sha, nonce),
-  burn: async (id, token) => { await relay.burn(id, token); },
-};
+export function relayTransport(relay: RelayClient = defaultRelay): Transport {
+  return {
+    backend: "relay",
+    seal: (b) => relay.seal(b),
+    fetch: (id) => relay.fetch(id),
+    status: (id) => relay.status(id),
+    sign: (id, blob) => relay.sign(id, blob),
+    signatures: (id) => relay.signatures(id).then((r) => r.signatures),
+    postEvent: (id, blob) => relay.postEvent(id, blob),
+    events: (id) => relay.events(id).then((r) => r.events),
+    attest: (id, action, sha, nonce) => relay.attest(id, action, sha, nonce),
+    burn: async (id, token) => { await relay.burn(id, token); },
+  };
+}
+export const relayTransportFor = (url: string): Transport => relayTransport(makeRelay(url));
 
 const rand = (n: number) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => b.toString(16).padStart(2, "0")).join("");
 const envPath = (id: string) => `envelopes/${id}/envelope.json`;
