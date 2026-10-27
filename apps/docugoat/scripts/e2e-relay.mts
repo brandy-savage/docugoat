@@ -80,7 +80,7 @@ const evts = (await get(`/api/envelopes/${id}/events`)).body.events; assert.equa
 assert.ok(!JSON.stringify(evts).match(/Bob|viewed|\d+\.\d+\.\d+\.\d+/)); step("event log on relay holds no name, kind, or IP in the clear");
 const ev = await decryptJson<any>(ada!.key, { iv: evts[0].cipher.iv, ciphertext: evts[0].ciphertext });
 assert.equal(ev.kind, "viewed"); assert.equal(JSON.parse(ev.receipt.receipt).action, "view"); step("owner decrypts the viewed event with its receipt");
-const grep = (await import("node:child_process")).execSync(`grep -rl "${rb.ip}" ../server/data/relay/envelopes/${id} || true`).toString().trim();
+const grep = (await import("node:child_process")).execSync(`grep -rl "${rb.ip}" ../relay/data/relay/envelopes/${id} || true`).toString().trim();
 assert.equal(grep, ""); step("relay store contains no plaintext IP");
 
 const tampered = fromB64(env.ciphertext); tampered[5] ^= 0xff;
