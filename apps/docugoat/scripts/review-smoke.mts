@@ -47,3 +47,23 @@ console.log("\nblocks are clean text; headings:", nda.filter((b) => b.heading).l
   if (r.findings.length === 0) throw new Error("expected findings on the sample MSA");
 }
 console.log("\nALL REVIEW CHECKS PASSED");
+
+// ---- a Word document all the way to the signed PDF definition ----
+{
+  const fs = await import("node:fs");
+  const { docxToMarkdown, docxSource } = await import("../src/lib/docxDoc");
+  const { buildDocDefinition } = await import("../src/lib/pdf");
+  const { canonicalMarkdown } = await import("../src/lib/markdown");
+  const { sha256Hex } = await import("../src/lib/crypto");
+  const bytes = new Uint8Array(fs.readFileSync(new URL("../public/samples/sample-msa.docx", import.meta.url)));
+  const { markdown, title } = await docxToMarkdown(bytes);
+  const src = await docxSource("sample-msa.docx", bytes);
+  const doc = { v: 2 as const, kind: "docx" as const, docx: src, title, markdown: canonicalMarkdown(markdown), createdAt: new Date().toISOString(), author: "Ada", recipients: [{ slot: 0, name: "Ada", role: "owner" as const, signs: true }, { slot: 1, name: "Bob", role: "signer" as const }] };
+  const sha = await sha256Hex(doc.markdown);
+  const dd = buildDocDefinition(doc, "e2edocx", sha, [], []);
+  const flat = JSON.stringify(dd.content);
+  if (!flat.includes("MASTER SERVICES AGREEMENT")) throw new Error("docx title missing from PDF content");
+  if (JSON.stringify(doc).length > 1_000_000) throw new Error("payload too large");
+  console.log(`docx envelope payload ${Math.round(JSON.stringify(doc).length / 1024)} KB (incl. ${Math.round(src.b64.length / 1024)} KB base64 original); PDF definition has ${dd.content.length} blocks`);
+}
+console.log("DOCX → PDF CHECK PASSED");

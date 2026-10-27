@@ -3,6 +3,7 @@
 // All document text is inserted with textContent, never as HTML.
 
 import { changeCount, type CompareRow, type Side } from '@docugoat/review/compare';
+import { mountDialog } from './dom.ts';
 import { diffText } from '@docugoat/docx/diff';
 import type { DocumentRecord, VersionRecord } from '../storage/store.ts';
 import { button } from './findings.ts';
@@ -259,7 +260,7 @@ export interface CompareDialogOptions {
 export function openCompareDialog(opts: CompareDialogOptions): void {
   const dialog = el('dialog', 'rules-dialog compare-dialog');
   dialog.setAttribute('aria-labelledby', 'compare-dialog-title');
-  document.body.append(dialog);
+  mountDialog(dialog);
   dialog.addEventListener('close', () => dialog.remove());
 
   const head = el('header', 'dialog-head');

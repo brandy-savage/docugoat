@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, FileText, Lock } from "lucide-react";
 import { Spinner, Toast } from "../components/ui";
 import { setHandoff } from "../lib/handoff";
+import reviewerCss from "@docugoat/reviewer/style.css?raw";
+import { BASE_URL } from "../lib/env";
 import { mountReviewer, type ReviewerHandle } from "../lib/reviewerHost";
 
 /** Stage 1 for Word documents: the full Contract Reviewer, embedded. When the redline is done, hand the bytes to sealing. */
@@ -17,7 +19,7 @@ export function Review() {
 
   useEffect(() => {
     let alive = true;
-    mountReviewer(host.current!, (n) => alive && setDocName(n)).then((h) => { if (!alive) return h.destroy(); handle.current = h; setReady(true); }).catch((e) => setToast(e instanceof Error ? e.message : "Reviewer failed to start"));
+    mountReviewer(host.current!, { css: reviewerCss, sampleUrl: `${BASE_URL.replace(/\/$/, "")}/samples/sample-msa.docx`, onSession: (n) => alive && setDocName(n) }).then((h) => { if (!alive) return h.destroy(); handle.current = h; setReady(true); }).catch((e) => setToast(e instanceof Error ? e.message : "Reviewer failed to start"));
     return () => { alive = false; handle.current?.destroy(); };
   }, []);
 

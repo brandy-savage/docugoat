@@ -2,6 +2,7 @@
 // pasted text, edit the rulepack as JSON, import and export.
 
 import { runRuleTests, scan } from '@docugoat/rules/engine';
+import { mountDialog } from './dom.ts';
 import type { Rulepack } from '@docugoat/rules/types';
 import { parseRulepack } from '@docugoat/rules/validate';
 import { button } from './findings.ts';
@@ -22,7 +23,7 @@ export function openRulesDialog(initial: Rulepack, cb: RulesDialogCallbacks): vo
 
   const dialog = el('dialog', 'rules-dialog');
   dialog.setAttribute('aria-label', 'Rules and approved language');
-  document.body.append(dialog);
+  mountDialog(dialog);
   dialog.addEventListener('close', () => dialog.remove());
 
   const save = async (next: Rulepack) => {

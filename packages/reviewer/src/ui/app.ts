@@ -1,4 +1,5 @@
 import { changeCount, compareBlocks, mergeEdits, type CompareRow, type CompareText, type Side } from '@docugoat/review/compare';
+import { eventTarget, openDialog, setDialogHost } from './dom.ts';
 import { exportDocx, openDocx, revisionDate, type OpenedDocx } from '@docugoat/docx/document';
 import type { Edit, RevisionOptions } from '@docugoat/docx/edits';
 import type { ParagraphInfo } from '@docugoat/docx/paragraphs';
@@ -52,6 +53,11 @@ interface Comparison {
 const AUTHOR_KEY = 'contract-reviewer.author';
 const RULEPACK_KEY = 'rulepack';
 
+export interface AppOptions {
+  /** Where the bundled sample document lives. Defaults to `samples/sample-msa.docx` relative to the page. */
+  sampleUrl?: string;
+}
+
 export class App {
   private session: Session | null = null;
   private documents: DocumentRecord[] = [];
@@ -68,7 +74,10 @@ export class App {
   constructor(
     private readonly root: HTMLElement,
     private readonly store: ReviewStore,
-  ) {}
+    private readonly options: AppOptions = {},
+  ) {
+    setDialogHost(root);
+  }
 
   async start(): Promise<void> {
     this.root.innerHTML = '';
@@ -161,11 +170,11 @@ export class App {
     wrap.querySelector('#search-next')!.addEventListener('click', () => this.stepSearch(1));
     window.addEventListener('keydown', (e) => {
       // Escape cancels editing wherever focus is (dialogs handle their own Escape).
-      if (e.key === 'Escape' && this.editing && !document.querySelector('dialog[open]') && !(e.target instanceof HTMLTextAreaElement)) {
+      if (e.key === 'Escape' && this.editing && !openDialog() && !(eventTarget(e) instanceof HTMLTextAreaElement)) {
         if (this.discardEmptyInsert() === null) this.finishEdit(null);
         return;
       }
-      if (this.comparison && !e.metaKey && !e.ctrlKey && !e.altKey && !isTyping(e.target) && !document.querySelector('dialog[open]')) {
+      if (this.comparison && !e.metaKey && !e.ctrlKey && !e.altKey && !isTyping(eventTarget(e)) && !openDialog()) {
         if (e.key === 'j' || e.key === 'n') this.stepComparison(1);
         if (e.key === 'k' || e.key === 'p') this.stepComparison(-1);
         if ((e.key === '1' || e.key === '2') && this.comparison.current !== null) {
@@ -254,7 +263,7 @@ export class App {
   }
 
   async importSample(): Promise<void> {
-    const res = await fetch('samples/sample-msa.docx');
+    const res = await fetch(this.options.sampleUrl ?? 'samples/sample-msa.docx');
     if (!res.ok) return this.toast('Could not load the sample contract');
     const blob = await res.blob();
     await this.importFiles([new File([blob], 'Sample MSA.docx')]);
