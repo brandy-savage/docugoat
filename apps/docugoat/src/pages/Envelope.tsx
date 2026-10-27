@@ -31,7 +31,7 @@ export function EnvelopePage() {
   const [phase, setPhase] = useState<Phase>({ k: "loading" });
   const [record, setRecord] = useState<VaultRecord | undefined>(() => findRecord(id));
   const [signatures, setSignatures] = useState<VerifiedSignature[]>([]);
-  const [audit, setAudit] = useState<AuditEvent[]>([]);
+  const [audit, setAudit] = useState<AuditEvent[] | null>(null);
   const [toast, setToast] = useState<{ m: string; tone?: "bad" | "good" } | null>(null);
   const [exporting, setExporting] = useState(false);
 
@@ -75,7 +75,7 @@ export function EnvelopePage() {
   async function exportPdf() {
     if (phase.k !== "open") return;
     setExporting(true);
-    try { await downloadPdf(phase.opened.doc, id, phase.opened.documentSha256, signatures, audit); }
+    try { await downloadPdf(phase.opened.doc, id, phase.opened.documentSha256, signatures, audit ?? []); }
     catch (e) { setToast({ m: e instanceof Error ? e.message : "PDF failed", tone: "bad" }); }
     finally { setExporting(false); }
   }
@@ -131,7 +131,8 @@ export function EnvelopePage() {
   const signers = opened.doc.recipients.filter((r) => r.role === "signer" || r.signs);
   const allMine = parseFields(opened.doc.markdown).filter((f) => me.name === "" || sameName(f.name, me.name));
   const myFields = allMine.filter((f) => f.kind === "sign");
-  const myInputs = allMine.filter((f) => INPUT_KINDS.includes(f.kind));
+  // One input per distinct field key: two identical tokens (same kind, name, label) share a value.
+  const myInputs = allMine.filter((f) => INPUT_KINDS.includes(f.kind)).filter((f, i, arr) => arr.findIndex((g) => fieldKey(g) === fieldKey(f)) === i);
   const myDates = allMine.filter((f) => f.kind === "date").length;
   const iCanSign = !isOwner || !!me.signs || myFields.length > 0;
 
@@ -157,7 +158,7 @@ export function EnvelopePage() {
         <div className="surface overflow-hidden">
           <DocumentView markdown={opened.doc.markdown} ctx={ctx} />
           <div className="border-t hairline">
-            <Certificate doc={opened.doc} envelopeId={id} documentSha256={opened.documentSha256} signatures={signatures} audit={audit} />
+            <Certificate doc={opened.doc} envelopeId={id} documentSha256={opened.documentSha256} signatures={signatures} audit={audit ?? []} />
           </div>
         </div>
 
@@ -201,7 +202,7 @@ export function EnvelopePage() {
           ) : null}
           <div className="surface p-5">
             <p className="eyebrow mb-3">Activity</p>
-            <AuditTrail events={audit} compact />
+            {audit ? <AuditTrail events={audit} compact /> : <p className="flex items-center gap-2 text-xs text-bone-500"><Spinner /> Loading activity…</p>}
           </div>
           <div className="rounded-2xl border hairline p-4 text-[11px] leading-5 text-bone-500">
             <p className="mb-1 font-semibold text-bone-400">Integrity</p>

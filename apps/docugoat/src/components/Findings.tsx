@@ -25,7 +25,7 @@ export function Findings({ markdown, onChange }: { markdown: string; onChange?: 
     for (const name of templateVariables(t.text)) {
       if (!vars[name]?.trim()) {
         const v = window.prompt(`Value for {{${name}}}`, "");
-        if (v === null) return;
+        if (v == null) return;
         vars[name] = v.trim();
       }
     }

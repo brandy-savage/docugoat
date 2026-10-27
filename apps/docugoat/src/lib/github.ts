@@ -58,14 +58,34 @@ export async function listDir(cfg: GhConfig, path: string): Promise<{ name: stri
 export interface GhCommitInfo { sha: string; date: string; verified: boolean }
 
 /** Create (or, with sha, update) a file. Returns the commit GitHub recorded for it. */
-export async function writeFile(cfg: GhConfig, path: string, content: string, message: string, sha?: string): Promise<GhCommitInfo> {
+export async function writeFile(cfg: GhConfig, path: string, content: string, message: string, sha?: string, opts: { create?: boolean } = {}): Promise<GhCommitInfo> {
   if (!cfg.token) throw new GhError(401, "A write token is required");
-  const r = await gh<{ commit: { sha: string; committer: { date: string }; verification?: { verified: boolean } } }>(
+  const put = (blobSha?: string) => gh<{ commit: { sha: string; committer: { date: string }; verification?: { verified: boolean } } }>(
     cfg, `/contents/${encodePath(path)}`,
-    { method: "PUT", body: JSON.stringify({ message, content: utf8ToB64(content), ...(sha ? { sha } : {}), ...(cfg.branch ? { branch: cfg.branch } : {}) }) },
+    { method: "PUT", body: JSON.stringify({ message, content: utf8ToB64(content), ...(blobSha ? { sha: blobSha } : {}), ...(cfg.branch ? { branch: cfg.branch } : {}) }) },
     true,
   );
-  return { sha: r.commit.sha, date: r.commit.committer.date, verified: !!r.commit.verification?.verified };
+  try {
+    const r = await put(sha);
+    return { sha: r.commit.sha, date: r.commit.committer.date, verified: !!r.commit.verification?.verified };
+  } catch (e) {
+    // 409/422: the file exists with a different sha (or we thought it didn't exist). Re-read once and retry —
+    // never for creates, where an existing file means we must not overwrite it.
+    if (opts.create || !(e instanceof GhError) || (e.status !== 409 && e.status !== 422)) throw e;
+    const current = await readFile(cfg, path);
+    const r = await put(current?.sha);
+    return { sha: r.commit.sha, date: r.commit.committer.date, verified: !!r.commit.verification?.verified };
+  }
+}
+
+/** Reads can lag a write by a moment; poll briefly before concluding a file is absent. */
+export async function readFileEventually(cfg: GhConfig, path: string, attempts = 4): Promise<GhFile | null> {
+  for (let i = 0; i < attempts; i++) {
+    const f = await readFile(cfg, path);
+    if (f) return f;
+    await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+  }
+  return null;
 }
 
 /** Commits that touched a path, oldest first. GitHub records committer dates server-side for API writes. */

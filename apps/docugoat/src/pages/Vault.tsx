@@ -27,7 +27,7 @@ export function Vault() {
   }
   function forget(id: string) {
     removeRecord(id); setRecords(loadVault());
-    const s = getSession(); if (s) saveAccount(s, loadVault()).then(setSession).catch(() => undefined);
+    const s = getSession(); if (s) saveAccount(s, loadVault(), [id]).then(setSession).catch(() => undefined);
   }
 
   return (

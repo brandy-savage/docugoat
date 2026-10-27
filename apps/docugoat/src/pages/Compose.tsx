@@ -62,7 +62,7 @@ export function Compose() {
     const next = to.trim();
     if (!next || sameName(from, next)) { if (next !== from) setSigners(signers.map((x) => (x === from ? next || from : x))); return; }
     setSigners(signers.map((x) => (x === from ? next : x)));
-    setMarkdown(markdown.replace(FIELD_RE, (m, kind: string, name: string) => (sameName(name, from) ? fieldToken(kind.toLowerCase() as "sign", next) : m)));
+    setMarkdown(markdown.replace(FIELD_RE, (m, kind: string, name: string, label?: string) => (sameName(name, from) ? fieldToken(kind.toLowerCase() as "sign", next, (label ?? "").trim()) : m)));
   }
 
   const needsAccount = BACKEND === "github" && !getSession();
