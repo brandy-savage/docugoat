@@ -19,6 +19,7 @@ export function Account() {
   const session = getSession();
   const current = loadDefaultStore();
   const [kind, setKind] = useState<"relay" | "github">(session ? "github" : current.kind);
+  const [advanced, setAdvanced] = useState(kind === "github");
   const [relayUrl, setRelayUrl] = useState(current.kind === "relay" ? current.url : PUBLIC_RELAY);
   const [relayOk, setRelayOk] = useState<boolean | null>(null);
   const [owner, setOwner] = useState(session?.cfg.owner ?? (current.kind === "github" ? current.owner : GH_BASE.owner));
@@ -70,12 +71,19 @@ export function Account() {
     <div className="mx-auto max-w-lg px-5 py-12">
       <p className="eyebrow">Where your envelopes live</p>
       <h1 className="mt-1 text-2xl font-semibold tracking-tight">Store</h1>
-      <p className="mt-1 text-sm text-bone-500">Either way the store only ever holds ciphertext. Signers need nothing — their link names the store.</p>
+      <p className="mt-1 text-sm text-bone-500">The store only ever holds ciphertext. You don't need an account, a token, or anything else to seal and sign — the public relay is the default. Signers need nothing either; their link names the store.</p>
 
-      <div className="mt-6 flex gap-1 rounded-xl bg-ink-900 p-1">
-        <button type="button" className={tab(kind === "relay")} onClick={() => setKind("relay")}><Server size={14} className="mr-1.5 inline" /> Public relay</button>
-        <button type="button" className={tab(kind === "github")} onClick={() => setKind("github")}><Github size={14} className="mr-1.5 inline" /> My GitHub repo</button>
-      </div>
+      {advanced ? (
+        <div className="mt-6 flex gap-1 rounded-xl bg-ink-900 p-1">
+          <button type="button" className={tab(kind === "relay")} onClick={() => setKind("relay")}><Server size={14} className="mr-1.5 inline" /> Public relay</button>
+          <button type="button" className={tab(kind === "github")} onClick={() => setKind("github")}><Github size={14} className="mr-1.5 inline" /> My GitHub repo</button>
+        </div>
+      ) : (
+        <div className="mt-6 flex items-center justify-between rounded-xl border hairline bg-ink-900 px-4 py-3 text-sm">
+          <span className="flex items-center gap-2"><Server size={14} className="text-goat-400" /> Public relay</span>
+          <button type="button" className="text-xs text-bone-500 hover:text-bone-200" onClick={() => setAdvanced(true)}>Advanced: use my own GitHub repo instead</button>
+        </div>
+      )}
 
       {kind === "relay" ? (
         <div className="surface mt-4 space-y-4 p-6">

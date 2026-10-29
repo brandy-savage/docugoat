@@ -1,0 +1,17 @@
+{
+  "name": "docugoat-worker",
+  "private": true,
+  "type": "module",
+  "description": "docugoat relay as a Cloudflare Worker: D1 for metadata, R2 for ciphertext, Ed25519 receipts",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "deploy": "wrangler d1 migrations apply docugoat --remote && wrangler deploy",
+    "migrate:local": "wrangler d1 migrations apply docugoat --local",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^3.90.0"
+  }
+}

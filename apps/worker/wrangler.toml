@@ -1,0 +1,20 @@
+name = "docugoat-relay"
+main = "src/index.ts"
+compatibility_date = "2024-10-22"
+
+[vars]
+# Comma-separated origins allowed to call this relay from a browser.
+ALLOWED_ORIGINS = "https://redcloudinfosec.com,https://brandy-savage.github.io,https://localhost:5183"
+MAX_TTL_DAYS = "90"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "docugoat"
+database_id = "replace-after-wrangler-d1-create"
+
+[[r2_buckets]]
+binding = "BLOBS"
+bucket_name = "docugoat-blobs"
+
+[triggers]
+crons = ["17 3 * * *"]

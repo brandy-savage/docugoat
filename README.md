@@ -16,14 +16,25 @@ Zero-knowledge e-signatures. Write in markdown, seal it in your browser, hand ea
 
 Limits: a `.docx` must be under ~650 KB (GitHub's Contents API refuses reads above 1 MB; base64 adds a third). The signer view and PDF render the document's paragraphs and headings, not Word's full layout — the original file is always one click away.
 
+## Hosting the relay for everyone (Cloudflare Workers)
+
+`apps/worker/` is the relay as a Cloudflare Worker — same protocol and receipts as `apps/relay`, with metadata in D1 and ciphertext in R2. It is free at docugoat's scale, has a permanent HTTPS address, and needs nobody to run a machine. Users never see a token; the only credential involved is the operator's one-time `wrangler login`.
+
+```sh
+bash deploy/worker-setup.sh     # login, create D1 + R2, migrate, deploy, record the URL in deploy/relay.url
+npm run deploy:pages            # rebuild the site with that relay as its default store
+```
+
+Locally: `npm run dev:worker` serves it on http://localhost:8787 with a local D1/R2; `RELAY=http://localhost:8787 npm run test:e2e --workspace apps/docugoat` runs the relay suite against it. Edit `ALLOWED_ORIGINS` in `apps/worker/wrangler.toml` if the site moves. Expired envelopes are swept nightly by the cron trigger.
+
 ## Stores: where envelopes live
 
 Every signer link names its store, so one site serves all of them:
 
 | Store | Who can use it | Setup |
 | --- | --- | --- |
-| **Public relay** (default on the Pages site) | anyone — no account, no token | none; the relay attests times and IPs for the audit trail |
-| **Your own GitHub repo** | senders who want zero infrastructure | create a vault under **Account → My GitHub repo** with a public repo you own and a fine-grained token (Contents: read/write on that repo) |
+| **Public relay** (default) | anyone — no account, no token | none; the relay attests times and IPs for the audit trail |
+| **Your own GitHub repo** (Account → Advanced) | senders who insist on holding their own ciphertext | a public repo you own and a fine-grained token (Contents: read/write on that repo) |
 
 Choose under **Account**. The relay the Pages site points at is read from `deploy/relay.url` at deploy time (`RELAY_URL=… npm run deploy:pages` overrides it).
 

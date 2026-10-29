@@ -12,7 +12,9 @@
     "start": "npm run start --workspace apps/relay",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspace apps/reviewer && npm test --workspace apps/docugoat",
-    "deploy:pages": "bash deploy/pages.sh"
+    "deploy:pages": "bash deploy/pages.sh",
+    "dev:worker": "npm run dev --workspace apps/worker",
+    "deploy:worker": "npm run deploy --workspace apps/worker"
   },
   "devDependencies": {
     "@vitejs/plugin-basic-ssl": "^2.3.0",
